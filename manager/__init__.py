@@ -1,0 +1,1 @@
+"""Reims GUI Manager package."""

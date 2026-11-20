@@ -1,0 +1,50 @@
+# Binaries and bundled runtime (regenerate with manager\Setup-Backend.ps1)
+manager/Backend-Apps/
+manager/_internal/
+manager/dist/
+manager/build/
+manager/*.exe
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# VM state (user data - never commit)
+vms/
+macOS-disks/
+logs/
+run/
+
+# Build artifacts and reference/source trees (not part of the app)
+build/
+dist/
+refs/
+windows-smoke/
+guestchan/
+probe/
+firmware/
+kexts/
+
+# Firmware / disk / log artifacts
+*.img
+*.qcow2
+*.fd
+*.iso
+*.dmg
+*.log
+*.ppm
+*.bak-*
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.lnk
+*.swp
+.idea/
+.vscode/

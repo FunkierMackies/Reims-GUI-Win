@@ -1,0 +1,35 @@
+"""QMP inspect: run HMP commands against a running VM without quitting it.
+
+Usage:  python qmp-inspect.py <port> "<hmp command>" ["<hmp command>" ...]
+"""
+
+import json
+import socket
+import sys
+
+host, port = "127.0.0.1", int(sys.argv[1])
+commands = sys.argv[2:] or ["info status"]
+
+s = socket.create_connection((host, port), timeout=30)
+f = s.makefile("rwb", buffering=0)
+
+
+def recv():
+    line = f.readline()
+    if not line:
+        raise SystemExit("QMP closed")
+    return json.loads(line)
+
+
+def send(obj):
+    f.write((json.dumps(obj) + "\n").encode())
+
+
+recv()  # greeting
+send({"execute": "qmp_capabilities"})
+recv()
+for command in commands:
+    send({"execute": "human-monitor-command", "arguments": {"command-line": command}})
+    reply = recv()
+    print(f"===== {command}")
+    print(reply.get("return", reply))

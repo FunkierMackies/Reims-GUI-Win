@@ -1,0 +1,62 @@
+# -*- mode: python ; coding: utf-8 -*-
+"""PyInstaller spec: Reims GUI Manager (onedir, windowed)."""
+from PyInstaller.utils.hooks import collect_submodules
+
+block_cipher = None
+
+hidden = ["fatsync", "fatimg"]
+for mod in ("PySide6.QtCore", "PySide6.QtGui", "PySide6.QtWidgets",
+            "PySide6.QtNetwork", "PySide6.QtSvg", "PySide6.QtXml"):
+    hidden += collect_submodules(mod)
+
+datas = [
+    ("icons", "icons"),
+]
+
+a = Analysis(
+    ["main.py"],
+    pathex=[r"D:\Reims-GUI-Win\manager", r"D:\Reims-GUI-Win\scripts"],
+    binaries=[],
+    datas=datas,
+    hiddenimports=hidden,
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name="Reims GUI Manager",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=False,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=r"D:\Reims-GUI-Win\manager\icons\app.ico",
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name="Reims GUI Manager",
+)
