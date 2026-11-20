@@ -165,7 +165,7 @@ Use **Configure VM → SMBIOS** to generate a unique identity per VM.
 ## Recent changes
 
 - Packaged PyInstaller exe with a monitor-and-stand application icon.
-- Added `.gitignore`, `NOTICE.md`, and GPL-2.0 / GPL-3.0 / LGPL-3.0 licenses.
+- Added `.gitignore`, `NOTICE.md`, and GPL-2.0 / GPL-3.0 / LGPL-3.0 / MIT licenses.
 - Unified `.json` and `.ps1` in `vms\<name>\`; removed `generated\`.
 - Stopped creating `.bak-*` OpenCore images.
 - Replaced QMP shutdown with targeted `taskkill` and two-stage popups.
@@ -176,7 +176,7 @@ Use **Configure VM → SMBIOS** to generate a unique identity per VM.
 ## Notes
 
 - Two QEMU builds: Reims uses `Backend-Apps\ReimsQEMU\qemu-system-x86_64.exe` (newer, 2026-11-17);
-  Apple-GFX uses `Backend-Apps\AppleGFX-QEMU\` imported from `D:\qemu-rg-check\build4`.
+  Apple-GFX uses `Backend-Apps\AppleGFX-QEMU\` imported from `D:\qemu-rg-check\build4` (2026-11-07 build).
 - The generic fallback CPU preset is used when detection is inconclusive; there
   are no manual overrides by design.
 - `manager\Launch VM.cmd` is the one-click legacy launcher (deprecated).
