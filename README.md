@@ -26,7 +26,7 @@ This project (the Manager) was developed entirely with the assistance of AI tool
   - config: `<safe-name>.json`
   - launcher: `<safe-name>.ps1`
   - firmware copy: `OpenCore.img`
-- New disks: `D:\Reims-GUI-Win\macOS-disks\*.qcow2`
+- New disks: `\Reims-GUI-Win\macOS-disks\*.qcow2`
 
 Both the `.json` and `.ps1` filenames are the VM name you entered (with
 unsafe characters replaced by `_`). Legacy `vm.json` / `<name>-launch.ps1`
