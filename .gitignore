@@ -39,6 +39,16 @@ kexts/
 *.ppm
 *.bak-*
 
+# Exception: the manager's packaged build outputs and staged kexts are
+# intentionally committed to this repository (same folder names).
+!manager/kexts/
+!manager/dist/
+!manager/_internal/
+!manager/__pycache__/
+!manager/__pycache__/*.pyc
+!manager/__pycache__/*.pyo
+!manager/**/*.pyd
+
 # Editor / OS noise
 .DS_Store
 Thumbs.db
