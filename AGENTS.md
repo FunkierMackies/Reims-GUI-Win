@@ -15,21 +15,16 @@ they are large, platform-specific, user-specific, and licensed separately. See
 `NOTICE.md`.
 
 To assemble a runnable tree, obtain the external tools described in
-`README.md` and run `manager\Setup-Backend.ps1` on a Windows host with
-access to the original build trees, then build the executable with:
+`README.md`, then build the executable with:
 
 ```powershell
 cd manager
 Backend-Apps\Python\python.exe -m PyInstaller --noconfirm --clean build_exe.spec
 ```
 
-Note: the original build trees that `Setup-Backend.ps1` sourced (`build\`,
-`firmware\`, `dist\`) were removed during cleanup, so rebuilding from scratch
-requires those trees to be restored or re-acquired separately.
-
 ## Quick start (Windows, after Backend-Apps is provisioned)
 
-Double-click `manager\Reims GUI Manager.exe` (or `Run Reims GUI.cmd`).
+Double-click `manager\Reims GUI Manager.exe`.
 
 - **Create New VM** — wizard: name, optional macOS installer ISO, disk
   (reuse an existing `.qcow2` or create a fresh one).
