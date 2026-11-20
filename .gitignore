@@ -14,17 +14,12 @@ __pycache__/
 .mypy_cache/
 *.egg-info/
 
-# VM state (user data - never commit)
-vms/
-macOS-disks/
-logs/
-run/
+# Keeping the empty state-tracking folders in git via .gitkeep.
+# Actual user data inside them (disks, VM configs, logs) stays ignored below.
 
 # Build artifacts and reference/source trees (not part of the app)
 build/
 dist/
-refs/
-windows-smoke/
 guestchan/
 probe/
 kexts/
@@ -38,6 +33,17 @@ kexts/
 *.log
 *.ppm
 *.bak-*
+
+# User data inside the tracked folders (keep folders, ignore contents)
+vms/*
+!vms/.gitkeep
+macOS-disks/*
+!macOS-disks/.gitkeep
+run/*
+!run/.gitkeep
+refs/*
+!refs/.gitkeep
+logs/
 
 # Exception: the manager's packaged build outputs and staged kexts are
 # intentionally committed to this repository (same folder names).
