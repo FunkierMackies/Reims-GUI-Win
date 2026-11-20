@@ -1,7 +1,7 @@
 # Reims GUI Manager - Windows
 
 A PySide6 desktop manager for creating, configuring, and launching multiple
-macOS VMs on Windows with the ported `reims-graphics-pci` / `apple-gfx-pci`
+macOS VMs on Windows with the ported `reims-graphics-pci` / `apple-gfx-pci` GPU
 stacks from Linux KVM -> Windows WHPX. 
 It writes per-VM PowerShell launch scripts and maintains a per-VM copy
 of the OpenCore firmware image; it does not rebuild QEMU.
@@ -11,8 +11,8 @@ This project (the Manager) was developed entirely with the assistance of AI tool
 
 ## Location
 
-- App + packaged exe: `D:\Reims-GUI-Win\manager\`
-- All tools: `D:\Reims-GUI-Win\manager\Backend-Apps\`
+- App + packaged exe: `\Reims-GUI-Win\manager\`
+- All tools: `\Reims-GUI-Win\manager\Backend-Apps\`
   - `Python\` (Python 3.13 + PySide6 + PyInstaller)
   - `QEMU-Runtime\` (full UCRT64 DLL set + `qemu-img.exe`)
   - `AppleGFX-QEMU\` (build4: `apple-gfx-pci` + `reims_vgpu_c.dll`)
@@ -40,7 +40,7 @@ their absolute paths.
 
 ## Run
 
-Double-click **`D:\Reims-GUI-Win\manager\Reims GUI Manager.exe`**. This is the
+Double-click **`\Reims-GUI-Win\manager\Reims GUI Manager.exe`** or use the Shortcut in **`\Reims-GUI-Win\Reims GUI Manager.exe`**. This is the
 packaged executable (windowed; no console), using the monitor graphic from
 `icons\app.ico` as its Windows application icon; `icons\app.png` is the window
 icon. `Run Reims GUI.cmd` falls back to the bundled Python if the exe is absent.
@@ -86,7 +86,7 @@ paths chosen by the user are never changed.
   `.vhd` files; `.vhd` is passed to QEMU as `format=vpc`. Clearing the field
   removes the drive.
 - **Remove VM** (below the list) permanently deletes the VM directory
-  (`.json`, `.ps1`, `OpenCore.img`, logs) **and its qcow2 disk** after a
+  (`.json`, `.ps1`, `OpenCore.img`, logs) **and its qcow2 main disk and its secondary vhd/qcow2 disk** after a
   warning. A disk shared with another VM is kept.
 - Firmware profile/SMBIOS changes no longer create `.bak-*` images.
 
@@ -171,14 +171,12 @@ Use **Configure VM → SMBIOS** to generate a unique identity per VM.
 - Replaced QMP shutdown with targeted `taskkill` and two-stage popups.
 - Added optional secondary SATA drive (`.qcow2` / `.vhd`).
 - Fixed and improved `Import VM` for cross-drive trees.
-- Set the base firmware SMBIOS to the fixed values above.
+- Set the base firmware SMBIOS (placeholder) to the fixed values above.
 
 ## Notes
 
-- Two QEMU builds: Reims uses `build\qemu-system-x86_64.exe` (newer, 2026-11-17);
-  Apple-GFX uses `Backend-Apps\AppleGFX-QEMU\` from `D:\qemu-rg-check\build4`.
+- Two QEMU builds: Reims uses `Backend-Apps\ReimsQEMU\qemu-system-x86_64.exe` (newer, 2026-11-17);
+  Apple-GFX uses `Backend-Apps\AppleGFX-QEMU\` imported from `D:\qemu-rg-check\build4`.
 - The generic fallback CPU preset is used when detection is inconclusive; there
   are no manual overrides by design.
-- `manager\Launch VM.cmd` is the one-click legacy launcher for the original VM (deprecated).
-- Tools and app paths use `C:\` and `D:\`. An `E:\` tree is read only when the
-  user explicitly chooses it in **Import VM**; `F:\` is not used.
+- `manager\Launch VM.cmd` is the one-click legacy launcher (deprecated).
