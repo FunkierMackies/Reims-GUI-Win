@@ -170,6 +170,9 @@ serial, MLB, UUID, and a 6-byte colon-separated ROM, off the UI thread.
   via the bundled `qemu-img.exe`, into `$root/Reims-GUI-Win/macOS-disks/`.
   Default: `macOS.qcow2`, 120 GB, dynamically expanding. Verified: 20 GiB
   virtual / 192 KiB physical.
+- Optional `secondary_drive` attaches a `.qcow2` or `.vhd` image on SATA port
+  `sata.0` (VHD uses QEMU's `vpc` format driver); stored in the VM JSON with
+  the usual `{ROOT}` token.
 - Any macOS installer ISO (CreateInstallMedia or pkg-converted) can be picked;
   it is attached to a dedicated SATA/AHCI controller
   (`ich9-ahci,id=isosata,addr=0x9`, `ide-cd,bus=isosata.0,bootindex=2`). No
@@ -190,9 +193,6 @@ serial, MLB, UUID, and a 6-byte colon-separated ROM, off the UI thread.
 
 - The generic fallback CPU preset is used when detection is inconclusive; there
   are no manual overrides by design.
-- Optional `secondary_drive` attaches a `.qcow2` or `.vhd` image on SATA port
-  `sata.0` (VHD uses QEMU's `vpc` format driver); stored in the VM JSON with
-  the usual `{ROOT}` token.
 - Audio capture is disabled in the guest (`streams=1`); this is intentional to
   avoid Bluetooth TWS distortion. Output still works.
 
@@ -206,11 +206,9 @@ written. No Windows system files in `C:\Windows` were modified.
 - The packaged `Reims GUI Manager.exe` (PyInstaller onedir) uses the
   monitor-and-stand icon from `icons\app.ico`; `icons\app.png` is the window
   icon and the homescreen logo when no VM is selected.
-- Roughly 10.5 GB of redundant firmware backups, build/reference trees, caches,
-  and logs were moved to the Windows Recycle Bin. Active VM firmware,
-  `Backend-Apps`, and the qcow2 disk were kept.
 - GitHub-ready metadata: `.gitignore`, `.gitattributes`, `README.md`,
-  `AGENTS.md`, `NOTICE.md`, and `licenses/COPYING.{gpl-2.0,gpl-3.0,lgpl-3.0}`.
-- Local git branch `main` has commit `bae0dac` (source-only). The GitHub
-  connector token lacks repository-creation scope (403), so the remote must be
-  created by the user (or the connector granted repo scope) before pushing.
+  `AGENTS.md`, `NOTICE.md`, `LICENSE` (MIT for Manager source), and
+  `licenses/COPYING.{gpl-2.0,gpl-3.0,lgpl-3.0}` for bundled components.
+- The Manager's own source is MIT-licensed (AS IS / no warranty); bundled
+  QEMU/PySide6/firmware components keep their respective GPL/LGPL licenses
+  as documented in `NOTICE.md`.

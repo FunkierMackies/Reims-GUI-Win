@@ -1,5 +1,14 @@
 # NOTICE
 
+## Manager source code
+
+The Reims GUI Manager source code in this repository (the `manager\` and
+`scripts\` Python/PowerShell code, and the project documentation) is licensed
+under the **MIT License**, provided **AS IS** without warranty. See `LICENSE`
+for the full text. Copyright (c) 2026 FunkierMackies.
+
+## Third-party components
+
 This project incorporates third-party components. Their licenses are included
 in full under `licenses/`:
 
@@ -63,6 +72,6 @@ SMBIOS settings page.
 
 ## Project code
 
-Project source code is provided under the terms described in the license files
-above, as applicable to each component. This NOTICE is provided for
-attribution and does not replace the full license texts in `licenses/`.
+The Manager's own source is MIT-licensed (see `LICENSE`). This NOTICE is
+provided for attribution and does not replace the full license texts in
+`licenses/`, which govern the bundled third-party components.
