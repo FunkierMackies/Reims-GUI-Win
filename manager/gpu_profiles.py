@@ -1,6 +1,6 @@
 """GPU profiles: device + ROM + kext set for the two interchangeable stacks.
 
-AppleMCEReporterDisabler.kext is never enabled/disabled by the manager - it
+AppleMCEReporterDisabler.kext is never enabled/disabled/touched by the manager - it
 stays exactly as shipped in the firmware image.
 """
 
@@ -62,7 +62,7 @@ REIMS = GpuProfile(
     enable=REIMS_KECTS,
     disable=APPLE_GFX_KECTS,
     max_resolution="3840x2160",
-    notes="Primary GPU on the ported stack.",
+    notes="Primary GPU.",
 )
 
 APPLE_GFX = GpuProfile(
@@ -94,7 +94,7 @@ def get_profile(key: str) -> GpuProfile:
 
 
 def availability() -> dict:
-    """Report which of the seven kext bundles are staged on disk.
+    """Report which of the six kext bundles are staged on disk.
 
     Kexts are staged per-VM under <vm>/kexts/ by the manager. This function
     looks at the shared staging folder only; the UI shows the real per-VM view.

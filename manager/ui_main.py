@@ -1,6 +1,6 @@
 """PySide6 main window for the Reims GUI Manager.
 
-Homescreen (VirtualBox-style): VM list on the left, applied-config summary on
+Homescreen : VM list on the left, applied-config summary on
 the right, and a top toolbar with Start VM / Shutdown VM / Configure VM icon
 buttons. The config editor is shown only after Configure VM is clicked.
 """

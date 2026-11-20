@@ -1,9 +1,10 @@
-# Binaries and bundled runtime (regenerate with manager\Setup-Backend.ps1)
+# Binaries and bundled runtime
 manager/Backend-Apps/
 manager/_internal/
 manager/dist/
 manager/build/
 manager/*.exe
+firmware/
 
 # Python caches
 __pycache__/
@@ -26,7 +27,6 @@ refs/
 windows-smoke/
 guestchan/
 probe/
-firmware/
 kexts/
 
 # Firmware / disk / log artifacts

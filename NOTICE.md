@@ -29,6 +29,38 @@ subject to their own upstream licenses:
   AppleMCEReporterDisabler kexts** — respective upstream licenses, shipped
   inside the firmware image.
 
+## Project assets
+
+- `manager/icons/app.png` and `app.ico` are derived from a user-supplied
+  generative image of the Reims GUI Manager monitor and stand; the background
+  was removed and the graphic is used as the application/window icon.
+- `manager/icons/start.png`, `shutdown.png`, and `settings.png` are toolbar
+  icons used by the application.
+
+## Repository scope
+
+Only source, icons, documentation, and license texts are committed. Binary
+runtime dependencies, firmware images, virtual disks, VM configurations, logs,
+and generated launch scripts are excluded by `.gitignore`. The original build
+trees used to assemble `Backend-Apps` were removed from the working tree during
+cleanup and are not part of this repository.
+
+## Baseline firmware SMBIOS
+
+The base image `manager\Backend-Apps\Firmware\OpenCore-rgfx-3kext.img` (not in
+git) is configured with a fixed identity:
+
+| Key | Value |
+|---|---|
+| SystemProductName | `MacPro7,1` |
+| SystemSerialNumber | `W0000000001` |
+| SystemUUID | `00000000-0000-0000-0000-000000000000` |
+| MLB | `M000000000001` |
+| ROM | `112233000000` (hex, stored as 6 raw bytes) |
+
+Generated VMs copy this image and may override SMBIOS values through the
+SMBIOS settings page.
+
 ## Project code
 
 Project source code is provided under the terms described in the license files

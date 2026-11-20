@@ -23,7 +23,7 @@ DEFAULT_FIRMWARE = str(FIRMWARE_DIR / "OpenCore-rgfx-3kext.img")
 DEFAULT_QEMU = str(REIMS_QEMU_DIR / "qemu-system-x86_64.exe")
 ROOT_TOKEN = "{ROOT}/"
 _APP_TOKENS = ("vms", "firmware", "build", "macOS-disks",
-               "manager", "dist", "scripts", "generated")
+               "manager", "dist", "scripts")
 
 
 def _rel_to_root(value: str) -> str | None:

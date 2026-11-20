@@ -8,17 +8,23 @@ A desktop manager that creates, configures, and launches multiple macOS VMs
 on Windows. It writes PowerShell 7 launch scripts and edits a VM-local copy of
 the OpenCore FAT image; it does not rebuild QEMU.
 
-Homescreen (VirtualBox-style): VM list on the left; clicking a VM shows its
+Homescreen : VM list on the left; clicking a VM shows its
 applied-config summary on the right (General section). The config editor is
-hidden until **Configure VM** is pressed. Top toolbar: **Create New VM**, then
-icon-over-text buttons in order **Start VM** → **Shutdown VM** → **Configure VM**
-(icons in `manager/icons/`). Start runs hidden PowerShell/QEMU and shows a
-3-second popup with the last QEMU log line and exit code on crash. Shutdown uses
-`taskkill /T /F` on the selected VM's QEMU process (QMP system_powerdown was
-unreliable), with "Shutdown Requested" and "Shutdown Success" popups. Save VM Settings returns to the homescreen with either
+Hidden until **Configure VM** is pressed. Top toolbar: **Create New VM**,
+**Import VM** (JSON config only), then icon-over-text buttons in order
+**Start VM** → **Shutdown VM** → **Configure VM**
+(icons in `manager/icons/`). Clicking a VM shows its applied-config summary;
+with no selection, the right pane shows the Reims GUI Manager logo. Start runs
+hidden PowerShell/QEMU and shows a 3-second popup with the last QEMU log line
+and exit code on crash. Shutdown uses `taskkill /T /F` on the selected VM's
+QEMU process (QMP system_powerdown was unreliable), with "Shutdown Requested"
+and "Shutdown Success" popups ("Shutdown Failed" if still running after 20 s).
+Save VM Settings returns to the homescreen with either
 `New VM Settings Saved` (changes) or `No New VM Settings Found --- Close Only`
-(no changes); Cancel returns silently. **Remove VM** (below the list) deletes
-the `.json` and `.ps1`, keeping disk/firmware.
+(no changes); Cancel returns silently. **Remove VM** (below the list) warns
+that deletion is permanent and removes the VM folder (`.json`, `.ps1`,
+`OpenCore.img`, `vars.fd`, logs) plus its qcow2/vhd disks; disk shared with
+another VM is kept.
 
 Host detection is performed once at startup and cached (was ~2.5 s per call,
 causing multi-second freezes on repeated VM clicks); an explicit "Re-detect
@@ -29,7 +35,10 @@ host" button is the only other trigger.
 
 Each VM gets `<name>.json`, `<name>.ps1`, and `OpenCore.img` together in
 `vms/<name>/`. The `.ps1` derives `$root` from `$PSScriptRoot` (two levels up),
-so the install can move between drives without path errors.
+so the install can move between drives. The obsolete `generated\` folder was
+removed (sent to the Recycle Bin). Import copies the source VM folder's
+`OpenCore.img` and `vars.fd`; missing `{ROOT}` paths are re-anchored to the
+source tree so a VM from another drive still boots.
 
 Paths:
 
@@ -45,13 +54,19 @@ Paths:
 
 ## Run
 
-- Double-click `D:\Reims-GUI-Win\manager\Run Reims GUI.cmd` (uses the bundled
-  Python in `Backend-Apps`; no system Python or global PySide6 needed).
-- `manager\Setup-Backend.ps1` rebuilds `Backend-Apps` if it is missing.
+- Double-click `D:\Reims-GUI-Win\manager\Reims GUI Manager.exe` (uses the
+  packaged PySide6/PyInstaller runtime; no system Python needed). The app icon
+  and window icon are derived from the user-supplied monitor-and-stand image.
+- `manager\Setup-Backend.ps1` rebuilds `Backend-Apps` if it is missing. Its
+  original build-tree sources (`build\`, `firmware\`, `dist\`) were removed
+  during cleanup, so they must be restored/re-acquired first.
 - `manager\paths.py` centralises all backend paths and QEMU runtime PATH.
+- A local git repo on branch `main` is initialised; only source, icons, docs,
+  and licenses are committed. `.gitignore` excludes binaries/VM state.
 
 `Backend-Apps` contains: `Python\` (Python 3.13 + PySide6 6.12.0),
-`GenSMBIOS\macserial.exe`, and `QEMU-Runtime\` (24 UCRT DLLs).
+`GenSMBIOS\macserial.exe`, `QEMU-Runtime\`, `AppleGFX-QEMU\`, `ReimsQEMU\`,
+`Firmware\`, `PowerShell7\`, and `Scripts\`.
 
 ## 2. Host detection (runs on every manager open, no manual overrides)
 
@@ -119,8 +134,9 @@ and selection clamped on switch). Reims supports all seven.
 ## 6c. Launch scripts and VM actions
 
 The `<name>.ps1` is generated when a VM is created, saved, or launched. It
-resolves every install path from `$root = Split-Path -Parent $PSScriptRoot`, so
-the tree can move between drives. JSON stores paths as `{ROOT}/relative`.
+resolves every install path from `$root = Split-Path -Parent (Split-Path -Parent
+$PSScriptRoot)` because the script now lives in `<root>\vms\<name>\`, so the
+tree can move between drives. JSON stores paths as `{ROOT}/relative`.
 Icon-toolbar actions: Start VM (hidden PowerShell, crash popup), Shutdown VM
 (taskkill the selected VM's QEMU, two-stage popups), Configure VM (opens the editor). Remove VM is below the list.
 
@@ -130,8 +146,9 @@ Icon-toolbar actions: Start VM (hidden PowerShell, crash popup), Shutdown VM
 `scripts/fatsync.py` helpers. It edits `EFI/OC/config.plist` inside the VM-local
 `OpenCore.img`: toggles `Kernel.Add[].Enabled`, adds missing entries when the
 bundle is present in the image, stages bundles from `manager/kexts/`, and writes
-with `replace_file` so the plist may grow. Base firmware is never touched;
-per-profile and SMBIOS writes keep `.bak` copies.
+with `replace_file` so the plist may grow. Base firmware is only edited for
+the fixed baseline SMBIOS identity; profile and SMBIOS writes to VM-local
+images no longer create `.bak` copies.
 
 ## 6. SMBIOS
 
@@ -141,11 +158,16 @@ serial, MLB, UUID, and a 6-byte colon-separated ROM, off the UI thread.
 - `MacPro7,1` - **MOST RECOMMENDED**
 - `iMacPro1,1` - ALTERNATIVE; selecting it shows an orange note below the
   model selector: **NOT COMPATIBLE WITH macOS Tahoe**
+- The base firmware image `manager\Backend-Apps\Firmware\OpenCore-rgfx-3kext.img`
+  is preconfigured with: `MacPro7,1`, serial `W0000000001`,
+  UUID `00000000-0000-0000-0000-000000000000`, MLB `M000000000001`,
+  ROM `112233000000` (hex; stored as 6 raw bytes). New VMs inherit it until
+  the SMBIOS settings page generates a unique tuple.
 
 ## 7. Install ISO, disks and launch
 
 - New qcow2 disks are created from the VM tab (`Create qcow2 in macOS-disks`)
-  via the bundled `qemu-img.exe`, into `D:\Reims-GUI-Win\macOS-disks\`.
+  via the bundled `qemu-img.exe`, into `$root/Reims-GUI-Win/macOS-disks/`.
   Default: `macOS.qcow2`, 120 GB, dynamically expanding. Verified: 20 GiB
   virtual / 192 KiB physical.
 - Any macOS installer ISO (CreateInstallMedia or pkg-converted) can be picked;
@@ -176,5 +198,19 @@ serial, MLB, UUID, and a 6-byte colon-separated ROM, off the UI thread.
 
 ## 9. Permission boundary
 
-Only `C:\` and `D:\` were read or written. Drives `E:\` and `F:\` were not
-touched. No Windows system files in `C:\Windows` were modified.
+Only `C:\`, `D:\`, and (for a user-initiated VM import) `E:\` were read or
+written. No Windows system files in `C:\Windows` were modified.
+
+## 10. Packaging and repository state
+
+- The packaged `Reims GUI Manager.exe` (PyInstaller onedir) uses the
+  monitor-and-stand icon from `icons\app.ico`; `icons\app.png` is the window
+  icon and the homescreen logo when no VM is selected.
+- Roughly 10.5 GB of redundant firmware backups, build/reference trees, caches,
+  and logs were moved to the Windows Recycle Bin. Active VM firmware,
+  `Backend-Apps`, and the qcow2 disk were kept.
+- GitHub-ready metadata: `.gitignore`, `.gitattributes`, `README.md`,
+  `AGENTS.md`, `NOTICE.md`, and `licenses/COPYING.{gpl-2.0,gpl-3.0,lgpl-3.0}`.
+- Local git branch `main` has commit `bae0dac` (source-only). The GitHub
+  connector token lacks repository-creation scope (403), so the remote must be
+  created by the user (or the connector granted repo scope) before pushing.

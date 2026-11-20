@@ -97,10 +97,6 @@ def runtime_env(profile_key: str | None = None) -> dict:
 def macserial_path() -> Path:
     if MACSERIAL.is_file():
         return MACSERIAL
-    legacy = Path(
-        r"C:\Users\Windows 11 Pro 26H2\Downloads\GenSMBIOS-master"
-        r"\GenSMBIOS-master\Scripts\macserial.exe")
-    return legacy
 
 
 def preflight() -> list:
