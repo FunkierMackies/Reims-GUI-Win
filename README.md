@@ -6,6 +6,9 @@ stacks from Linux KVM -> Windows WHPX.
 It writes per-VM PowerShell launch scripts and maintains a per-VM copy
 of the OpenCore firmware image; it does not rebuild QEMU.
 
+## Acknowledgments
+This project (the Manager) was developed entirely with the assistance of AI tools.
+
 ## Location
 
 - App + packaged exe: `D:\Reims-GUI-Win\manager\`
@@ -132,7 +135,7 @@ Six CPU presets cover Intel/AMD x AVX-512 x core-band, exactly as specified.
 ## Licensing
 
 The **Manager source code** (this repository's own Python/PowerShell code and
-documentation) is MIT-licensed — see `LICENSE`. It is provided **AS IS**,
+documentation) is MIT-licensed — see `manager/LICENSE`. It is provided **AS IS**,
 without warranty of any kind.
 
 The **bundled third-party runtime components** (not committed here) keep their

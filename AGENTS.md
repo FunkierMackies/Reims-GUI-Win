@@ -69,6 +69,6 @@ licenses/           full license texts (GPL-2.0, GPL-3.0, LGPL-3.0)
 ## Licensing
 
 The Manager's own source code and documentation are **MIT-licensed** (provided
-AS IS, no warranty) — see `LICENSE`. Bundled third-party components keep their
+AS IS, no warranty) — see `manager/LICENSE`. Bundled third-party components keep their
 own licenses (GPL-2.0-or-later, GPL-3.0-or-later, LGPL-3.0-or-later as
 applicable); see `NOTICE.md` and `licenses/`.

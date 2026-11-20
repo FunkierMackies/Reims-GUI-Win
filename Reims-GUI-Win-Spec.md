@@ -207,8 +207,9 @@ written. No Windows system files in `C:\Windows` were modified.
   monitor-and-stand icon from `icons\app.ico`; `icons\app.png` is the window
   icon and the homescreen logo when no VM is selected.
 - GitHub-ready metadata: `.gitignore`, `.gitattributes`, `README.md`,
-  `AGENTS.md`, `NOTICE.md`, `LICENSE` (MIT for Manager source), and
-  `licenses/COPYING.{gpl-2.0,gpl-3.0,lgpl-3.0}` for bundled components.
+  `AGENTS.md`, `NOTICE.md`, `manager/LICENSE` (MIT for Manager source), and
+  `licenses/{GPL-2.0-or-later,GPL-3.0-or-later,LGPL-3.0-or-later}` for bundled
+  components.
 - The Manager's own source is MIT-licensed (AS IS / no warranty); bundled
   QEMU/PySide6/firmware components keep their respective GPL/LGPL licenses
   as documented in `NOTICE.md`.
