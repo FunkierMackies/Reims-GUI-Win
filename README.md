@@ -201,4 +201,7 @@ The GPU stacks used by this project are built on the work of
   Apple-GFX uses `Backend-Apps\AppleGFX-QEMU\` imported from `D:\qemu-rg-check\build4` (2026-11-07 build).
 - The generic fallback CPU preset is used when detection is inconclusive; there
   are no manual overrides by design.
+- This repository and distribution does not include Apple proprietary software,
+  macOS installation media, or pre-built VM disk images. Any bundled SMBIOS
+  values serve only as generic placeholders required for initial macOS booting.
 - `manager\Launch VM.cmd` is the one-click legacy launcher (deprecated).
