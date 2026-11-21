@@ -1,9 +1,16 @@
 # Binaries and bundled runtime
-manager/Backend-Apps/
-manager/_internal/
-manager/dist/
-manager/build/
-manager/*.exe
+manager/Backend-Apps/*
+!manager/Backend-Apps/PowerShell7/
+!manager/Backend-Apps/Python/
+!manager/Backend-Apps/Scripts/
+manager/Backend-Apps/*/Backend-Apps/
+manager/Backend-Apps/*/dist/
+manager/Backend-Apps/*/build/
+manager/Backend-Apps/*/__pycache__/
+
+# Keep the actual executables inside the imported Backend-Apps folders
+!manager/Backend-Apps/PowerShell7/*.exe
+!manager/Backend-Apps/Python/*.exe
 firmware/
 
 # Python caches
@@ -18,8 +25,8 @@ __pycache__/
 # Actual user data inside them (disks, VM configs, logs) stays ignored below.
 
 # Build artifacts and reference/source trees (not part of the app)
-build/
-dist/
+/build/
+/dist/
 guestchan/
 probe/
 kexts/
@@ -43,6 +50,8 @@ run/*
 !run/.gitkeep
 refs/*
 !refs/.gitkeep
+windows-smoke/*
+!windows-smoke/.gitkeep
 logs/
 
 # Exception: the manager's packaged build outputs and staged kexts are

@@ -143,6 +143,9 @@ and regenerates the `.ps1`.
   reboot
   ```
 - `AppleMCEReporterDisabler.kext` is never touched.
+- Both GPU stacks have only been tested and confirmed to run well on macOS
+  Tahoe 26.7.1. macOS Monterey (specifically 12.6.1) currently has issues;
+  see the Releases description for details.
 
 Six CPU presets cover Intel/AMD x AVX-512 x core-band, exactly as specified.
 

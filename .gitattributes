@@ -6,3 +6,4 @@
 *.img binary
 *.qcow2 binary
 *.fd binary
+manager/Backend-Apps/Python/Lib/site-packages/PySide6/Qt6WebEngineCore.dll filter=lfs diff=lfs merge=lfs -text
