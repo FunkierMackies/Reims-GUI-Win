@@ -126,9 +126,13 @@ and regenerates the `.ps1`.
   `Reims-Graphics (FOR SYSTEM WITH NVIDIA RTX)` / `Apple-GFX (FOR SYSTEM WITHOUT NVIDIA RTX)`.
 - **Non-RTX** (AMD / Intel / GTX / GT) -> Apple-GFX default (same selector text).
 - Default profile still follows the RTX rule; the parenthetical text is fixed.
-- Reims-Graphics needs **Graft + ReimsGraphics + RgfxGate** kexts
-- Apple-GFX needs only **Lilu + ReimsMetalCompat** kexts
- `AppleMCEReporterDisabler.kext` is never touched.
+- Reims-Graphics requires the **Graft**, **ReimsGraphics**, and **RgfxGate**
+  kexts. It delivers the best overall performance and acceleration, though it
+  has only been tested on NVIDIA RTX systems (specifically RTX Blackwell).
+- Apple-GFX requires only the **Lilu** and **ReimsMetalCompat** kexts. It offers
+  broad hardware compatibility across a wide range of GPUs, but lacks OpenGL
+  support and delivers lower performance compared to Reims-Graphics.
+  `AppleMCEReporterDisabler.kext` is never touched.
 
 Six CPU presets cover Intel/AMD x AVX-512 x core-band, exactly as specified.
 
