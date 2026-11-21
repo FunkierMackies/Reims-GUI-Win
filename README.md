@@ -7,7 +7,7 @@ It writes per-VM PowerShell launch scripts and maintains a per-VM copy
 of the OpenCore firmware image; it does not rebuild QEMU.
 
 ## Acknowledgments
-This project (the Manager) was developed entirely with the assistance of AI tools.
+This project was developed entirely with the assistance of AI tools.
 
 ## Location
 
