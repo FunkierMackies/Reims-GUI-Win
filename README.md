@@ -40,7 +40,7 @@ their absolute paths.
 
 ## Run
 
-Double-click **`\Reims-GUI-Win\manager\Reims GUI Manager.exe`** or use the Shortcut in **`\Reims-GUI-Win\Reims GUI Manager.exe`**. This is the
+Double-click **`\Reims-GUI-Win\manager\Reims GUI Manager.exe`** or use the cmd launch script in **`\Reims-GUI-Win\Run Reims GUI.cmd`**. This is the
 packaged executable (windowed; no console), using the monitor graphic from
 `icons\app.ico` as its Windows application icon; `icons\app.png` is the window
 icon. `Run Reims GUI.cmd` falls back to the bundled Python if the exe is absent.

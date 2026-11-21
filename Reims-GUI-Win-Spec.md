@@ -55,7 +55,7 @@ Paths:
 ## Run
 
 - Double-click `D:\Reims-GUI-Win\manager\Reims GUI Manager.exe` (uses the
-  packaged PySide6/PyInstaller runtime; no system Python needed). The app icon
+  packaged PySide6/PyInstaller runtime; no system Python needed) or 'Run Reims GUI.cmd'. The app icon
   and window icon are derived from the user-supplied monitor-and-stand image.
 - `manager\Setup-Backend.ps1` rebuilds `Backend-Apps` if it is missing. Its
   original build-tree sources (`build\`, `firmware\`, `dist\`) were removed
