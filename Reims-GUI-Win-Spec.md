@@ -160,8 +160,8 @@ serial, MLB, UUID, and a 6-byte colon-separated ROM, off the UI thread.
   model selector: **NOT COMPATIBLE WITH macOS Tahoe**
 - The base firmware image `manager\Backend-Apps\Firmware\OpenCore-rgfx-3kext.img`
   is preconfigured with: `MacPro7,1`, serial `W0000000001`,
-  UUID `00000000-0000-0000-0000-000000000000`, MLB `M000000000001`,
-  ROM `112233000000` (hex; stored as 6 raw bytes). New VMs inherit it until
+  UUID `3075185E-D610-4C2D-BA85-A0D2E102C352`, MLB `F5K248401GUK3F7UE`,
+  ROM `42E0FF3C4283` (hex; stored as 6 raw bytes). New VMs inherit it until
   the SMBIOS settings page generates a unique tuple.
 
 ## 7. Install ISO, disks and launch

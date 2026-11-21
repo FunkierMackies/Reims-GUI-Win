@@ -66,9 +66,9 @@ git) is configured with a fixed identity:
 |---|---|
 | SystemProductName | `MacPro7,1` |
 | SystemSerialNumber | `W0000000001` |
-| SystemUUID | `00000000-0000-0000-0000-000000000000` |
-| MLB | `M000000000001` |
-| ROM | `112233000000` (hex, stored as 6 raw bytes) |
+| SystemUUID | `3075185E-D610-4C2D-BA85-A0D2E102C352` |
+| MLB | `F5K248401GUK3F7UE` |
+| ROM | `42E0FF3C4283` (hex, stored as 6 raw bytes) |
 
 Generated VMs copy this image and may override SMBIOS values through the
 SMBIOS settings page.
