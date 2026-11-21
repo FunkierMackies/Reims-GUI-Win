@@ -132,7 +132,17 @@ and regenerates the `.ps1`.
 - Apple-GFX requires only the **Lilu** and **ReimsMetalCompat** kexts. It offers
   broad hardware compatibility across a wide range of GPUs, but lacks OpenGL
   support and delivers lower performance compared to Reims-Graphics.
-  `AppleMCEReporterDisabler.kext` is never touched.
+- `AppleMCEReporterDisabler.kext` is never touched.
+- Note: Once macOS is installed and you reach the desktop, you may only see the
+  wallpaper. To fix this, boot into macOS Recovery, open Terminal, and run the
+  following commands:
+
+  ```
+  cd "/Volumes/Macintosh HD - Data/Library/ Preferences"
+  defaults write .GlobalPreferences METAL ERROR MODE -int 5
+  chmod 644 .GlobalPreferences.plist
+  reboot
+  ```
 
 Six CPU presets cover Intel/AMD x AVX-512 x core-band, exactly as specified.
 
