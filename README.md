@@ -149,21 +149,6 @@ and regenerates the `.ps1`.
 
 Six CPU presets cover Intel/AMD x AVX-512 x core-band, exactly as specified.
 
-## Licensing
-
-The **Manager source code** (this repository's own Python/PowerShell code and
-documentation) is MIT-licensed — see `manager/LICENSE`. It is provided **AS IS**,
-without warranty of any kind.
-
-The **bundled third-party runtime components** (not committed here) keep their
-own licenses: QEMU under GPL-2.0-or-later, PySide6 under LGPL-3.0/GPL-3.0,
-PowerShell 7 under MIT, and the firmware/kext components under their respective
-upstream licenses. Those components are documented in `NOTICE.md`, with full
-texts in `licenses/`.
-
-The MIT license on the Manager does not alter the license obligations of the
-bundled components.
-
 ## Baseline firmware SMBIOS
 
 `manager\Backend-Apps\Firmware\OpenCore-rgfx-3kext.img` is the base image copied
@@ -189,6 +174,27 @@ Use **Configure VM → SMBIOS** to generate a unique identity per VM.
 - Added optional secondary SATA drive (`.qcow2` / `.vhd`).
 - Fixed and improved `Import VM` for cross-drive trees.
 - Set the base firmware SMBIOS (placeholder) to the fixed values above.
+
+## Licensing
+
+The **Manager source code** (this repository's own Python/PowerShell code and
+documentation) is MIT-licensed — see `manager/LICENSE`. It is provided **AS IS**,
+without warranty of any kind.
+
+The **bundled third-party runtime components** (not committed here) keep their
+own licenses: QEMU under GPL-2.0-or-later, PySide6 under LGPL-3.0/GPL-3.0,
+PowerShell 7 under MIT, and the firmware/kext components under their respective
+upstream licenses. Those components are documented in `NOTICE.md`, with full
+texts in `licenses/`.
+
+The MIT license on the Manager does not alter the license obligations of the
+bundled components.
+
+## Credits
+
+The GPU stacks used by this project are built on the work of
+[steelbrain/reims-vgpu](https://github.com/steelbrain/reims-vgpu) — thanks for
+the GPU stack and for making macOS VM acceleration possible.
 
 ## Notes
 
