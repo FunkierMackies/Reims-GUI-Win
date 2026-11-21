@@ -33,8 +33,7 @@ subject to their own upstream licenses:
   with the runtime.
 - **QEMU (Reims and Apple-GFX builds)** — GPL-2.0-or-later. QEMU source and
   license are available from https://www.qemu.org/.
-- **OpenCore / OVMF firmware** — BSD / MIT-style licenses (NOKIA, Intel, Apple,
-  and contributors as applicable). See the firmware distribution.
+- **OpenCore / OVMF firmware** — BSD / MIT-style licenses. See the firmware distribution.
 - **PowerShell 7** — MIT License (Microsoft).
 - **GenSMBIOS / macserial** — GPL-3.0-or-later (as used by the project).
 - **Lilu, ReimsGraphics, RgfxGate, ReimsMetalCompat,
