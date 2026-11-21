@@ -7,7 +7,7 @@ It writes per-VM PowerShell launch scripts and maintains a per-VM copy
 of the OpenCore firmware image; it does not rebuild QEMU.
 
 ## Acknowledgments
-This project was developed entirely with the assistance of AI tools.
+This project was developed entirely with the assistance of AI tools (Deepseek-v4.1-Flash & HY4 Flash)
 
 ## Location
 
@@ -193,8 +193,7 @@ bundled components.
 ## Credits
 
 The GPU stacks used by this project are built on the work of
-[steelbrain/reims-vgpu](https://github.com/steelbrain/reims-vgpu) — thanks for
-the GPU stack and for making macOS VM acceleration possible.
+[steelbrain/reims-vgpu](https://github.com/steelbrain/reims-vgpu) Thanks to his hard work for making macOS VM acceleration possible.
 
 ## Notes
 
