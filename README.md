@@ -138,7 +138,7 @@ and regenerates the `.ps1`.
 
   ```
   cd "/Volumes/Macintosh HD - Data/Library/Preferences"
-  defaults write .GlobalPreferences METAL ERROR MODE -int 5
+  defaults write .GlobalPreferences METAL_ERROR_MODE -int 5
   chmod 644 .GlobalPreferences.plist
   reboot
   ```
