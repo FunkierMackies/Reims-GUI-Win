@@ -110,7 +110,7 @@ and regenerates the `.ps1`.
 2. **VM Settings** - name, disk (pick/create qcow2), secondary disk (optional, only .qcow2 & .vhd format are supported), locked CPU preset, cores
    capped at host physical cores, memory, NVMe identity, audio, accelerator.
 3. **Graphics** - set the resolution/graphics you want to use in the selector; resolution 854x480 → 3840x2160
-   (Apple-GFX capped at 1920x1080); per-profile QEMU binary/device/ROM/kexts.
+   (Apple-GFX capped at maximum 1920x1080); per-profile QEMU binary/device/ROM/kexts.
 4. **SMBIOS** - headless `macserial.exe`; `MacPro7,1` MOST RECOMMENDED;
    `iMacPro1,1` ALTERNATIVE; shows orange **NOT COMPATIBLE WITH macOS Tahoe**.
 5. **Install** - attach any installer ISO (created with createinstallmedia / VMware-style ISO) on a dedicated SATA/AHCI controller.
