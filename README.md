@@ -137,7 +137,7 @@ and regenerates the `.ps1`.
   Terminal, and run the following commands:
 
   ```
-  cd "/Volumes/Macintosh HD - Data/Library/Preferences"
+  cd "/Volumes/yourmacosdrivename - Data/Library/Preferences"
   defaults write .GlobalPreferences METAL_ERROR_MODE -int 5
   chmod 644 .GlobalPreferences.plist
   reboot
