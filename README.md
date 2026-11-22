@@ -16,7 +16,7 @@ This project was developed entirely with the assistance of AI tools (Deepseek-v4
   - `Python\` (Python 3.13 + PySide6 + PyInstaller)
   - `QEMU-Runtime\` (full UCRT64 DLL set + `qemu-img.exe`)
   - `AppleGFX-QEMU\` (build4: `apple-gfx-pci` + `reims_vgpu_c.dll`)
-  - `ReimsQEMU\` (main QEMU + `pc-bios\` + `roms\`)
+  - `ReimsQEMU\` (`reims-graphics-pci` + `pc-bios\` + `roms\`)
   - `Firmware\` (`OpenCore-rgfx-3kext.img`, OVMF_CODE/VARS)
   - `PowerShell7\` (pwsh.exe and modules for generated launchers)
   - `GenSMBIOS\` (macserial + helpers)
@@ -69,7 +69,7 @@ are re-anchored to the source tree instead, so a VM copied from another drive
 still boots; the result dialog lists every path that was re-anchored. Absolute
 paths chosen by the user are never changed.
 
-- **Start VM** launches hidden PowerShell/QEMU. If QEMU exits with an error,
+- **Start VM** launches the VM QEMU. If QEMU exits with an error,
   a 3-second popup shows the last QEMU log line and the exit code
   (e.g. `qemu-system-x86_64: -cpu: no CPUID is Valid | Exit Code: 1`).
 - **Shutdown VM** force-terminates this VM's QEMU with `taskkill /T /F`
@@ -87,7 +87,7 @@ paths chosen by the user are never changed.
   removes the drive.
 - **Remove VM** (below the list) permanently deletes the VM directory
   (`.json`, `.ps1`, `OpenCore.img`, logs) **and its qcow2 main disk and its secondary vhd/qcow2 disk** after a
-  warning. A disk shared with another VM is kept.
+  warning and confirming.
 - Firmware profile/SMBIOS changes no longer create `.bak-*` images.
 
 Host detection runs once at startup and is cached, so clicking VMs is instant.
@@ -109,12 +109,12 @@ and regenerates the `.ps1`.
 1. **Host** - detected on every open; explains why (CPU spoof + GPU selection).
 2. **VM Settings** - name, disk (pick/create qcow2), secondary disk (optional, only .qcow2 & .vhd format are supported), locked CPU preset, cores
    capped at host physical cores, memory, NVMe identity, audio, accelerator.
-3. **Graphics** - recommendation in the selector; resolution 854x480 → 3840x2160
+3. **Graphics** - set the resolution you wanted in the selector; resolution 854x480 → 3840x2160
    (Apple-GFX capped at 1920x1080); per-profile QEMU binary/device/ROM/kexts.
 4. **SMBIOS** - headless `macserial.exe`; `MacPro7,1` MOST RECOMMENDED;
    `iMacPro1,1` ALTERNATIVE; shows orange **NOT COMPATIBLE WITH macOS Tahoe**.
-5. **Install** - attach any installer ISO on a dedicated SATA/AHCI controller.
-   Audio is **output-only**: `virtio-sound-pci,...,streams=1` exposes just one
+5. **Install** - attach any installer ISO (created with createinstallmedia / VMware-style ISO) on a dedicated SATA/AHCI controller.
+6. Audio is **output-only**: `virtio-sound-pci,...,streams=1` exposes just one
    PCM stream, which QEMU always assigns to playback. The guest has no
    microphone/capture device, avoiding distorted sound with Bluetooth TWS
    headsets (host speakers are unaffected). This is fixed in the launcher;
@@ -142,10 +142,10 @@ and regenerates the `.ps1`.
   chmod 644 .GlobalPreferences.plist
   reboot
   ```
-- `AppleMCEReporterDisabler.kext` is never touched.
 - Both GPU stacks have only been tested and confirmed to run well on macOS
   Tahoe 26.7.1. macOS Monterey (specifically 12.6.1) currently has issues;
   see the Releases description for details.
+- `AppleMCEReporterDisabler.kext` is never touched.
 
 Six CPU presets cover Intel/AMD x AVX-512 x core-band, exactly as specified.
 
