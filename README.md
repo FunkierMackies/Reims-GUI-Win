@@ -109,7 +109,7 @@ and regenerates the `.ps1`.
 1. **Host** - detected on every open; explains why (CPU spoof + GPU selection).
 2. **VM Settings** - name, disk (pick/create qcow2), secondary disk (optional, only .qcow2 & .vhd format are supported), locked CPU preset, cores
    capped at host physical cores, memory, NVMe identity, audio, accelerator.
-3. **Graphics** - set the resolution you wanted in the selector; resolution 854x480 → 3840x2160
+3. **Graphics** - set the resolution/graphics you want to use in the selector; resolution 854x480 → 3840x2160
    (Apple-GFX capped at 1920x1080); per-profile QEMU binary/device/ROM/kexts.
 4. **SMBIOS** - headless `macserial.exe`; `MacPro7,1` MOST RECOMMENDED;
    `iMacPro1,1` ALTERNATIVE; shows orange **NOT COMPATIBLE WITH macOS Tahoe**.
@@ -124,7 +124,7 @@ and regenerates the `.ps1`.
 
 - **NVIDIA RTX host** -> Reims default; selector text:
   `Reims-Graphics (FOR SYSTEM WITH NVIDIA RTX)` / `Apple-GFX (FOR SYSTEM WITHOUT NVIDIA RTX)`.
-- **Non-RTX** (AMD / Intel / GTX / GT) -> Apple-GFX default (same selector text).
+- **Non-RTX** (AMD / Intel / NVIDIA GTX / GT) -> Apple-GFX default (same selector text).
 - Default profile still follows the RTX rule; the parenthetical text is fixed.
 - Reims-Graphics requires the **Graft**, **ReimsGraphics**, and **RgfxGate**
   kexts. It delivers the best overall performance and acceleration, though it
@@ -145,7 +145,7 @@ and regenerates the `.ps1`.
 - Both GPU stacks have only been tested and confirmed to run well on macOS
   Tahoe 26.7.1. macOS Monterey (specifically 12.6.1) currently has issues;
   see the Releases description for details.
-- `AppleMCEReporterDisabler.kext` is never touched.
+- `AppleMCEReporterDisabler.kext` is never touched **(REQUIRED FOR MacPro6,1/MacPro7,1 & iMacPro1,1 SMBIOS)**.
 
 Six CPU presets cover Intel/AMD x AVX-512 x core-band, exactly as specified.
 
