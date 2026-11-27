@@ -13,7 +13,6 @@ from pathlib import Path
 from config_model import (VMConfig, ROOT as APP_ROOT,
                           FIRMWARE_DIR, REIMS_QEMU_DIR)
 from gpu_profiles import get_profile, resolve_resolution
-from presets import REFERENCE_CPU
 from paths import QEMU_RUNTIME, APPLE_QEMU, qemu_for_profile, runtime_env
 
 ROOT_FIRMWARE = str(FIRMWARE_DIR)
@@ -86,9 +85,7 @@ def build_qemu_args(cfg: VMConfig) -> list:
         "-machine", "q35,memory-backend=ram,max-ram-below-4g=1G",
         "-object", f"memory-backend-ram,id=ram,size={memory},share=on",
         "-accel", cfg.accel,
-        # All VMs use the reims-ctl reference CPU string; stored preset values
-        # are kept in the config for the UI but no longer drive the launch.
-        "-cpu", REFERENCE_CPU,
+        "-cpu", cfg.cpu,
         "-smp", smp,
         "-m", memory,
         # Match reims-ctl (qemu.rs): the new QEMU build uses speed/width, not

@@ -11,35 +11,23 @@ from dataclasses import dataclass
 
 from host_detect import HostSpec
 
-# Reference CPU from reims-ctl (vm.rs default_cpu_model/flags). This is the
-# single model/flag set reims-ctl uses on every x86-64 VM; the host-dependent
-# prefix is added by launch_gen from the same source.
-REFERENCE_CPU_MODEL = (
-    "Skylake-Client-v4,model-id=Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz"
-)
-REFERENCE_CPU_FLAGS = (
-    "+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check"
-)
-REFERENCE_CPU = (
-    REFERENCE_CPU_MODEL + ",kvm=on,vendor=GenuineIntel,+invtsc,"
-    "vmware-cpuid-freq=on," + REFERENCE_CPU_FLAGS
-)
-
 # ---- verbatim preset strings -------------------------------------------------
+# Intel presets use `check` (not `enforce`): reims-ctl's QEMU build rejects
+# unsupported features cleanly instead of aborting the VM.
 INTEL_2_8 = (
     "Skylake-Client-v4,vendor=GenuineIntel,"
     "model-id=Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz,"
-    "+ssse3,+sse4.2,+popcnt,+avx,+avx2,+aes,+xsave,+xsaveopt,-arat,enforce"
+    "+ssse3,+sse4.2,+popcnt,+avx,+avx2,+aes,+xsave,+xsaveopt,-arat,check"
 )
 INTEL_GT8 = (
     "Skylake-Client-v4,vendor=GenuineIntel,"
     "model-id=Intel(R) Xeon(R) W-2191B CPU @ 2.30GHz,"
-    "+ssse3,+sse4.2,+popcnt,+avx,+avx2,+aes,+xsave,+xsaveopt,-arat,enforce"
+    "+ssse3,+sse4.2,+popcnt,+avx,+avx2,+aes,+xsave,+xsaveopt,-arat,check"
 )
 INTEL_AVX512 = (
     "Cascadelake-Server-v4,vendor=GenuineIntel,"
     "model-id=Intel(R) Xeon(R) W-3275M CPU @ 2.50GHz,"
-    "+ssse3,+sse4.2,+popcnt,+avx,+avx2,+aes,+xsave,+xsaveopt,-arat,enforce"
+    "+ssse3,+sse4.2,+popcnt,+avx,+avx2,+aes,+xsave,+xsaveopt,-arat,check"
 )
 
 AMD_2_8 = (
@@ -99,10 +87,7 @@ def choose_preset(host: HostSpec) -> PresetChoice:
     gpu_default = "reims" if rtx else "apple-gfx"
 
     def make(key: str, cpu: str, reason: str) -> PresetChoice:
-        # CPU now follows reims-ctl exactly; the key/reason still describe the
-        # detected host and its recommended GPU profile.
-        return PresetChoice(key, REFERENCE_CPU, reason,
-                            gpu_default, reims_label, apple_label)
+        return PresetChoice(key, cpu, reason, gpu_default, reims_label, apple_label)
 
     if host.cpu_vendor == "Intel":
         if host.avx512:
