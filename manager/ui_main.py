@@ -26,10 +26,10 @@ from PySide6.QtWidgets import (
 
 import host_detect
 import presets
-from config_model import VMConfig, VMS_DIR
+from config_model import VMConfig, VMS_DIR, safe_name
 from gpu_profiles import PROFILES, ALL_KECTS, RESOLUTIONS
 from launch_gen import write_launch
-from kext_switch import apply_profile, apply_smbios
+from kext_switch import apply_profile, apply_bootargs, apply_smbios
 from paths import (MACOS_DISKS, MANAGER, ROOT, pwsh_exe, qemu_for_profile,
                    qemu_img_exe, runtime_env)
 from smbios import MODELS, generate as gen_smbios, model_warning
@@ -336,7 +336,9 @@ class MainWindow(QMainWindow):
     def update_summary(self):
         cfg = self.cfg
         self.summary_name.setText(cfg.name or "No VM selected")
-        running = self._launch_proc is not None and self._launch_proc.poll() is None
+        launcher_alive = (self._launch_proc is not None
+                          and self._launch_proc.poll() is None)
+        running = launcher_alive and self._qemu_process_running()
         self.summary_status.setText("Status: Running" if running else "Status: Stopped")
         self.summary_fields["Display Name"].setText(cfg.name)
         self.summary_fields["CPU preset"].setText(cfg.cpu or "-")
@@ -749,9 +751,12 @@ class MainWindow(QMainWindow):
             f"Enable kexts: {', '.join(p.enable)}\n"
             f"Disable kexts: {', '.join(p.disable)}\n{p.notes}")
         max_idx = RESOLUTIONS.index(p.max_resolution)
+        current = self.res_combo.currentText()
         for i in range(self.res_combo.count()):
-            self.res_combo.model().item(i).setEnabled(i <= max_idx)
-        if RESOLUTIONS.index(self.res_combo.currentText()) > max_idx:
+            # "Max" adapts to the host monitor, so it is always available.
+            enabled = i <= max_idx or RESOLUTIONS[i] == "Max"
+            self.res_combo.model().item(i).setEnabled(enabled)
+        if current != "Max" and RESOLUTIONS.index(current) > max_idx:
             self.res_combo.setCurrentText(p.max_resolution)
         staged = KECTS
         lines = [f"{k}: {'staged' if (staged / k).is_dir() else 'NOT STAGED'}"
@@ -867,6 +872,7 @@ class MainWindow(QMainWindow):
                 staged = KECTS
                 apply_profile(image, self.cfg.gpu_profile,
                               staged_kexts=staged if staged.exists() else None)
+                apply_bootargs(image)
                 if self.smbios_values:
                     apply_smbios(image, self.smbios_values.as_dict())
                     self.cfg.smbios = self.smbios_values.as_dict()
@@ -965,6 +971,24 @@ class MainWindow(QMainWindow):
         if self._launch_ticks >= 8:  # 4s alive = started
             self._poll_timer.stop()
             self.update_summary()
+
+    def _qemu_process_running(self) -> bool:
+        """True if a qemu process for this VM is alive (not just the launcher)."""
+        frag = "vms/" + safe_name(self.cfg.name)
+        frag_b = frag.replace("/", "\\")
+        script = ("$p=Get-CimInstance Win32_Process -Filter "
+                  "\"Name='qemu-system-x86_64.exe'\"; "
+                  "$p | Where-Object { $_.CommandLine.Contains('" + frag +
+                  "') -or $_.CommandLine.Contains('" + frag_b +
+                  "') } | ForEach-Object { $_.ProcessId }")
+        try:
+            raw = subprocess.run(
+                [pwsh_exe(), "-NoProfile", "-Command", script],
+                capture_output=True, text=True, timeout=5,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            return bool((raw.stdout or "").strip())
+        except Exception:
+            return False
 
     @staticmethod
     def _pid_alive(pid: int) -> bool:

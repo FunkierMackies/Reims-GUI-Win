@@ -31,6 +31,10 @@ import fatsync  # noqa: E402  (local helper, path injected above)
 CONFIG_PATH = "EFI/OC/config.plist"
 KECTS_DIR = "EFI/OC/Kexts"
 
+# reims-ctl / reims-util default boot-args (NVRAM GUID 7C436110-...).
+NVRAM_GUID = "7C436110-AB2A-4BBB-A880-FE41995C9F82"
+REFERENCE_BOOT_ARGS = "keepsyms=1 tlbto_us=0 vti=9"
+
 from gpu_profiles import (  # noqa: E402
     ALL_KECTS, NEUTRAL_KECTS, get_profile,
 )
@@ -188,6 +192,26 @@ def apply_profile(image: Path, profile_key: str, *,
 
     write_config(image, cfg)
     return report
+
+
+def apply_bootargs(image: Path, boot_args: str = REFERENCE_BOOT_ARGS) -> dict:
+    """Write the reims-ctl boot-args into a VM-local OpenCore image."""
+    image = Path(image)
+    cfg = read_config(image)
+    add = cfg.setdefault("NVRAM", {}).setdefault("Add", {})
+    nv = add.setdefault(NVRAM_GUID, {})
+    nv["boot-args"] = boot_args
+    # reims-ctl keeps SIP enabled and no verbose/debug flags.
+    nv["csr-active-config"] = b"\x00\x00\x00\x00"
+    cfg.setdefault("NVRAM", {}).setdefault("Delete", {}).setdefault(
+        NVRAM_GUID, [])
+    delete = cfg["NVRAM"]["Delete"][NVRAM_GUID]
+    for key in ("boot-args", "ForceDisplayRotationInEFI",
+                "csr-active-config", "prev-lang:kbd"):
+        if key not in delete:
+            delete.append(key)
+    write_config(image, cfg)
+    return {"boot-args": boot_args, "image": str(image)}
 
 
 def apply_smbios(image: Path, values: dict, *, backup: bool = False) -> dict:

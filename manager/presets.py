@@ -11,6 +11,20 @@ from dataclasses import dataclass
 
 from host_detect import HostSpec
 
+# Reference CPU from reims-ctl (vm.rs default_cpu_model/flags). This is the
+# single model/flag set reims-ctl uses on every x86-64 VM; the host-dependent
+# prefix is added by launch_gen from the same source.
+REFERENCE_CPU_MODEL = (
+    "Skylake-Client-v4,model-id=Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz"
+)
+REFERENCE_CPU_FLAGS = (
+    "+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check"
+)
+REFERENCE_CPU = (
+    REFERENCE_CPU_MODEL + ",kvm=on,vendor=GenuineIntel,+invtsc,"
+    "vmware-cpuid-freq=on," + REFERENCE_CPU_FLAGS
+)
+
 # ---- verbatim preset strings -------------------------------------------------
 INTEL_2_8 = (
     "Skylake-Client-v4,vendor=GenuineIntel,"
@@ -85,7 +99,10 @@ def choose_preset(host: HostSpec) -> PresetChoice:
     gpu_default = "reims" if rtx else "apple-gfx"
 
     def make(key: str, cpu: str, reason: str) -> PresetChoice:
-        return PresetChoice(key, cpu, reason, gpu_default, reims_label, apple_label)
+        # CPU now follows reims-ctl exactly; the key/reason still describe the
+        # detected host and its recommended GPU profile.
+        return PresetChoice(key, REFERENCE_CPU, reason,
+                            gpu_default, reims_label, apple_label)
 
     if host.cpu_vendor == "Intel":
         if host.avx512:

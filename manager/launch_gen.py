@@ -12,7 +12,8 @@ from pathlib import Path
 
 from config_model import (VMConfig, ROOT as APP_ROOT,
                           FIRMWARE_DIR, REIMS_QEMU_DIR)
-from gpu_profiles import get_profile
+from gpu_profiles import get_profile, resolve_resolution
+from presets import REFERENCE_CPU
 from paths import QEMU_RUNTIME, APPLE_QEMU, qemu_for_profile, runtime_env
 
 ROOT_FIRMWARE = str(FIRMWARE_DIR)
@@ -63,6 +64,7 @@ def build_qemu_args(cfg: VMConfig) -> list:
     """Return the exact QEMU argv (no shell quoting)."""
     profile = get_profile(cfg.gpu_profile)
     rom = _rom_path(cfg)
+    resolution = resolve_resolution(cfg.resolution)
     smp = f"{cfg.cores},sockets=1,cores={cfg.cores},threads=1"
     memory = f"{cfg.memory_mb}M"
     vmdir = str(cfg.vm_dir)
@@ -70,22 +72,35 @@ def build_qemu_args(cfg: VMConfig) -> list:
     vars_path = str(cfg.vm_dir / "vars.fd")
     oc = str(cfg.local_firmware)
 
+    # reims-ctl: dsound without a capture device gets a silent input backend.
+    # Other backends use one audiodev for both directions.
+    backend = cfg.audio_backend or "dsound"
+    input_backend = "none" if backend == "dsound" else backend
+    input_audiodev = "sndin" if input_backend != backend else "snd0"
+    audio_devs = ["-audiodev", f"{backend},id=snd0"]
+    if input_backend != backend:
+        audio_devs += ["-audiodev", f"{input_backend},id=sndin"]
+
     args = [
         "-name", "reims-gui-vm",
         "-machine", "q35,memory-backend=ram,max-ram-below-4g=1G",
         "-object", f"memory-backend-ram,id=ram,size={memory},share=on",
         "-accel", cfg.accel,
-        "-cpu", cfg.cpu,
+        # All VMs use the reims-ctl reference CPU string; stored preset values
+        # are kept in the config for the UI but no longer drive the launch.
+        "-cpu", REFERENCE_CPU,
         "-smp", smp,
         "-m", memory,
+        # Match reims-ctl (qemu.rs): the new QEMU build uses speed/width, not
+        # the old x-speed/x-width properties (which abort every launch).
         "-global", "ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off",
         "-global", "ICH9-LPC.disable_s3=1",
-        "-global", "ICH9-LPC.disable_s4=1",
-        "-device", "pcie-root-port,bus=pcie.0,addr=0x1,slot=1,x-speed=16,x-width=32",
+        "-device", "pcie-root-port,bus=pcie.0,addr=0x1,slot=1,speed=16,width=32",
         "-device", "isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc",
         "-drive", f"if=pflash,format=raw,readonly=on,file={ovmf_code}",
         "-drive", f"if=pflash,format=raw,file={vars_path}",
         "-smbios", "type=2",
+        "-smbios", "type=17,speed=2666,memory_type=26",
         "-device", "ich9-ahci,id=sata,addr=0x2",
         "-drive", f"id=opencore,if=none,format=raw,snapshot=on,file={oc}",
         "-device", "ide-hd,bus=sata.2,drive=opencore,bootindex=1",
@@ -104,13 +119,17 @@ def build_qemu_args(cfg: VMConfig) -> list:
     args += [
         "-netdev", "user,id=net0,ipv6=off,hostfwd=tcp:127.0.0.1:2222-:22",
         "-device", "virtio-net-pci,netdev=net0,id=net0,mac=52:54:00:00:00:01,addr=0x3",
-        "-device", f"{profile.qemu_device},id=gfx,bus=pcie.0,addr=0x4,romfile={rom},resolution={cfg.resolution}",
-        "-audiodev", f"{cfg.audio_backend},id=snd0",
-        # streams=1 exposes a single PCM stream. QEMU's direction formula makes
-        # the first (and only) stream playback, so the guest has no capture
-        # device / microphone. Avoids distortion with Bluetooth headsets.
-        "-device", "virtio-sound-pci,audiodev=snd0,id=snd0,bus=pcie.0,addr=0x8,streams=1",
-        "-device", "qemu-xhci,id=xhci,addr=0x5,p2=8,p3=6,conditional-intr-mapping=on",
+        "-device", f"{profile.qemu_device},id=gfx,bus=pcie.0,addr=0x4,romfile={rom},resolution={resolution}",
+        # Audio matches reims-ctl (qemu.rs): separate output/input streams,
+        # plus an HDA boot-chime output. The input device uses a silent
+        # audiodev when the backend has no capture capability.
+        *audio_devs,
+        "-device", "virtio-sound-pci,id=audio,audiodev=snd0,addr=0x8,streams=1",
+        "-device", f"virtio-sound-pci,id=audioin,audiodev={input_audiodev},"
+                   "addr=0xa,streams=1,input-streams=1",
+        "-device", "ich9-intel-hda,id=hda,addr=0x1b",
+        "-device", "hda-output,bus=hda.0,audiodev=snd0",
+        "-device", "qemu-xhci,id=xhci,addr=0x5,p2=7,p3=7,conditional-intr-mapping=on",
         "-device", "usb-kbd,id=kbd,bus=xhci.0",
         "-device", "usb-tablet,id=tablet,bus=xhci.0",
         "-display", "none",
@@ -168,10 +187,13 @@ def render_launch(cfg: VMConfig) -> str:
         "foreach ($p in @(" + ", ".join(ps_arg(c) for c in checks) + ")) {",
         "    if (-not (Test-Path -LiteralPath $p)) { throw \"missing: $p\" }",
         "}",
-        "$env:REIMS_VGPU_LOG = 'info'",
-        "$env:REIMS_VGPU_WINDOW = '1'",
-        "# QEMU has CONFIG_SDL undefined; the reims library draws the SDL window.",
-        "$env:REIMS_VGPU_WINDOW_IMPL = 'sdl'",
+        "$env:REIMS_VGPU_LOG = 'warn'",
+        # reims-ctl unsets WINDOW so the device draws its own window; only 0
+        # makes it headless.
+        "Remove-Item Env:REIMS_VGPU_WINDOW -ErrorAction SilentlyContinue",
+        "Remove-Item Env:REIMS_VGPU_WINDOW_IMPL -ErrorAction SilentlyContinue",
+        *([f"$env:REIMS_VGPU_WINDOW_BORDERLESS = '1'"]
+          if cfg.resolution == "Max" else []),
         "$qemuArgs = @(",
     ]
     lines.append(",\n".join("    " + ps_arg(arg) for arg in build_qemu_args(cfg)))

@@ -82,8 +82,79 @@ PROFILES = {"reims": REIMS, "apple-gfx": APPLE_GFX}
 
 RESOLUTIONS = [
     "854x480", "1024x600", "1280x720", "1600x900",
-    "1920x1080", "2560x1440", "3840x2160",
+    "1920x1080", "2560x1440", "3840x2160", "Max",
 ]
+
+MAX_RESOLUTION = "Max"
+
+
+def host_max_resolution() -> str:
+    """Return the host's primary monitor native size as WxH.
+
+    Uses Win32 EnumDisplaySettings (all modes, picks the largest) with a
+    ctypes fallback to GetSystemMetrics; returns 1920x1080 if unavailable.
+    """
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class DEVMODE(ctypes.Structure):
+            _fields_ = [
+                ("dmDeviceName", wintypes.WCHAR * 32),
+                ("dmSpecVersion", wintypes.WORD),
+                ("dmDriverVersion", wintypes.WORD),
+                ("dmSize", wintypes.WORD),
+                ("dmDriverExtra", wintypes.WORD),
+                ("dmFields", wintypes.DWORD),
+                ("dmOrientation", ctypes.c_short),
+                ("dmPaperSize", ctypes.c_short),
+                ("dmPaperLength", ctypes.c_short),
+                ("dmPaperWidth", ctypes.c_short),
+                ("dmScale", ctypes.c_short),
+                ("dmCopies", ctypes.c_short),
+                ("dmDefaultSource", ctypes.c_short),
+                ("dmPrintQuality", ctypes.c_short),
+                ("dmColor", ctypes.c_short),
+                ("dmDuplex", ctypes.c_short),
+                ("dmYResolution", ctypes.c_short),
+                ("dmTTOption", ctypes.c_short),
+                ("dmCollate", ctypes.c_short),
+                ("dmFormName", wintypes.WCHAR * 32),
+                ("dmLogPixels", wintypes.WORD),
+                ("dmBitsPerPel", wintypes.DWORD),
+                ("dmPelsWidth", wintypes.DWORD),
+                ("dmPelsHeight", wintypes.DWORD),
+                ("dmDisplayFlags", wintypes.DWORD),
+                ("dmDisplayFrequency", wintypes.DWORD),
+            ]
+
+        dm = DEVMODE()
+        dm.dmSize = ctypes.sizeof(DEVMODE)
+        user32 = ctypes.windll.user32
+        best = (0, 0)
+        i = 0
+        while user32.EnumDisplaySettingsW(None, i, ctypes.byref(dm)):
+            if dm.dmPelsWidth * dm.dmPelsHeight > best[0] * best[1]:
+                best = (dm.dmPelsWidth, dm.dmPelsHeight)
+            i += 1
+            if i > 4096:
+                break
+        if best[0] and best[1]:
+            return f"{best[0]}x{best[1]}"
+        w = user32.GetSystemMetrics(0)
+        h = user32.GetSystemMetrics(1)
+        if w > 0 and h > 0:
+            return f"{w}x{h}"
+    except Exception:
+        pass
+    return "1920x1080"
+
+
+def resolve_resolution(value: str) -> str:
+    """Turn the UI's Max choice into a concrete WxH for the QEMU device."""
+    if value == MAX_RESOLUTION:
+        return host_max_resolution()
+    return value
 
 
 def get_profile(key: str) -> GpuProfile:
