@@ -8,6 +8,7 @@ of the OpenCore firmware image; it does not rebuild QEMU.
 
 ## Acknowledgments
 This project was developed entirely with the assistance of AI tools (Deepseek-v4.1-Flash & HY4 Flash)
+**DO NOT USE THE SOURCE CODE FOR RIGHT NOW, IT'S HALF UPDATED**
 
 ## Location
 
