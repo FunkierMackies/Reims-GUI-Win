@@ -117,8 +117,9 @@ def build_qemu_args(cfg: VMConfig) -> list:
         "-vga", "none",
         "-L", BIOS_DIR,
         "-serial", f"file:{vmdir}/serial.log",
-        "-qmp", "tcp:127.0.0.1:4444,server=on,wait=off",
+        "-qmp", f"tcp:127.0.0.1:{QMP_PORT},server=on,wait=off",
         "-msg", "timestamp=on",
+        "-action", "reboot=shutdown",
     ]
 
     if cfg.install_iso and Path(cfg.install_iso).is_file():
@@ -175,12 +176,57 @@ def render_launch(cfg: VMConfig) -> str:
         "$qemuArgs = @(",
     ]
     lines.append(",\n".join("    " + ps_arg(arg) for arg in build_qemu_args(cfg)))
-    lines += [
-        ")",
-        f"& {ps_arg(qemu_exe)} @qemuArgs",
-        "exit $LASTEXITCODE",
-    ]
+    lines.append(")")
+    lines += REBOOT_LOOP.replace("@QEMU@", ps_arg(qemu_exe)) \
+                        .replace("@QMP_PORT@", str(QMP_PORT)).splitlines()
     return "\n".join(lines) + "\n"
+
+
+QMP_PORT = 4444
+
+REBOOT_LOOP = r"""$qmpWatch = {
+    param($port, $state)
+    $deadline = (Get-Date).AddSeconds(60)
+    $client = $null
+    while (-not $client) {
+        try { $client = [System.Net.Sockets.TcpClient]::new('127.0.0.1', $port) }
+        catch {
+            if ((Get-Date) -gt $deadline) { return }
+            Start-Sleep -Milliseconds 250
+        }
+    }
+    try {
+        $stream = $client.GetStream()
+        $reader = [System.IO.StreamReader]::new($stream)
+        $writer = [System.IO.StreamWriter]::new($stream)
+        $writer.AutoFlush = $true
+        $null = $reader.ReadLine()
+        $writer.WriteLine('{"execute":"qmp_capabilities"}')
+        while ($null -ne ($line = $reader.ReadLine())) {
+            if ($line -match '"event"\s*:\s*"SHUTDOWN"' -and
+                $line -match '"reason"\s*:\s*"guest-reset"') { $state.Reset = $true }
+        }
+    } catch { } finally { $client.Dispose() }
+}
+$quickResets = 0
+while ($true) {
+    $state = [hashtable]::Synchronized(@{ Reset = $false })
+    $watcher = [powershell]::Create().AddScript($qmpWatch).AddArgument(@QMP_PORT@).AddArgument($state)
+    $pending = $watcher.BeginInvoke()
+    $started = Get-Date
+    & @QEMU@ @qemuArgs
+    $code = $LASTEXITCODE
+    $null = $pending.AsyncWaitHandle.WaitOne(3000)
+    $watcher.Dispose()
+    if (-not $state.Reset) { exit $code }
+    if (((Get-Date) - $started).TotalSeconds -lt 30) { $quickResets++ } else { $quickResets = 0 }
+    if ($quickResets -ge 5) {
+        Write-Output 'Reims launcher: guest reset 5 times within 30 s of starting; giving up.'
+        exit 1
+    }
+    Write-Output ("Reims launcher: guest restarted at {0:HH:mm:ss}; starting QEMU again." -f (Get-Date))
+}
+"""
 
 
 def write_launch(cfg: VMConfig) -> Path:
