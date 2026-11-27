@@ -14,6 +14,7 @@ from config_model import (VMConfig, ROOT as APP_ROOT,
                           FIRMWARE_DIR, REIMS_QEMU_DIR)
 from gpu_profiles import get_profile
 from paths import QEMU_RUNTIME, APPLE_QEMU, qemu_for_profile, runtime_env
+from smbios import nic_mac
 
 ROOT_FIRMWARE = str(FIRMWARE_DIR)
 BIOS_DIR = str(REIMS_QEMU_DIR / "pc-bios")
@@ -103,7 +104,7 @@ def build_qemu_args(cfg: VMConfig) -> list:
         ]
     args += [
         "-netdev", "user,id=net0,ipv6=off,hostfwd=tcp:127.0.0.1:2222-:22",
-        "-device", "virtio-net-pci,netdev=net0,id=net0,mac=52:54:00:00:00:01,addr=0x3",
+        "-device", f"virtio-net-pci,netdev=net0,id=net0,mac={nic_mac(cfg.smbios)},addr=0x3",
         "-device", f"{profile.qemu_device},id=gfx,bus=pcie.0,addr=0x4,romfile={rom},resolution={cfg.resolution}",
         "-audiodev", f"{cfg.audio_backend},id=snd0",
         # streams=1 exposes a single PCM stream. QEMU's direction formula makes

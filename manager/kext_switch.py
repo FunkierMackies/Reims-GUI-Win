@@ -34,6 +34,60 @@ KECTS_DIR = "EFI/OC/Kexts"
 from gpu_profiles import (  # noqa: E402
     ALL_KECTS, NEUTRAL_KECTS, get_profile,
 )
+from smbios import normalize_rom
+
+NIC_PCI_PATH = "PciRoot(0x0)/Pci(0x3,0x0)"
+VMM_PATCH_COMMENT = "Reims: kern.hv_vmm_present -> 0"
+_VMM_FIND = bytes.fromhex(
+    "4889cb" "e800000000" "48c1e83f" "8945f4" "488d75f4" "ba04000000"
+    "4889df" "ff5328")
+_VMM_MASK = bytes.fromhex("ffffff" "ff00000000") + b"\xff" * (len(_VMM_FIND) - 8)
+_VMM_REPLACE = _VMM_FIND[:8] + bytes.fromhex("31c09090") + _VMM_FIND[12:]
+_VMM_REPLACE_MASK = b"\x00" * 8 + b"\xff" * 4 + b"\x00" * (len(_VMM_FIND) - 12)
+
+
+def ensure_builtin_nic(cfg: dict) -> bool:
+    add = cfg.setdefault("DeviceProperties", {}).setdefault("Add", {})
+    props = add.setdefault(NIC_PCI_PATH, {})
+    if props.get("built-in") == b"\x01":
+        return False
+    props["built-in"] = b"\x01"
+    return True
+
+
+def ensure_vmm_patch(cfg: dict) -> bool:
+    patches = cfg.setdefault("Kernel", {}).setdefault("Patch", [])
+    if any(p.get("Comment") == VMM_PATCH_COMMENT for p in patches):
+        return False
+    patches.append({
+        "Arch": "x86_64",
+        "Base": "",
+        "Comment": VMM_PATCH_COMMENT,
+        "Count": 1,
+        "Enabled": True,
+        "Find": _VMM_FIND,
+        "Identifier": "kernel",
+        "Limit": 0,
+        "Mask": _VMM_MASK,
+        "MaxKernel": "",
+        "MinKernel": "25.0.0",
+        "Replace": _VMM_REPLACE,
+        "ReplaceMask": _VMM_REPLACE_MASK,
+        "Skip": 0,
+    })
+    return True
+
+
+def apply_apple_services(image: Path) -> dict:
+    image = Path(image)
+    cfg = read_config(image)
+    report = {
+        "builtin_nic_added": ensure_builtin_nic(cfg),
+        "vmm_patch_added": ensure_vmm_patch(cfg),
+    }
+    if any(report.values()):
+        write_config(image, cfg)
+    return report
 
 
 def _fat(image: Path) -> fatsync.Fat16:
@@ -186,6 +240,8 @@ def apply_profile(image: Path, profile_key: str, *,
     for name in NEUTRAL_KECTS:
         report["untouched"].append(name)
 
+    report["builtin_nic_added"] = ensure_builtin_nic(cfg)
+    report["vmm_patch_added"] = ensure_vmm_patch(cfg)
     write_config(image, cfg)
     return report
 
@@ -208,7 +264,8 @@ def apply_smbios(image: Path, values: dict, *, backup: bool = False) -> dict:
     for plist_key, value in values.items():
         if plist_key in mapping and value:
             if plist_key == "ROM" and isinstance(value, str):
-                value = bytes.fromhex(value.replace(":", "").replace(" ", ""))
+                value = bytes.fromhex(
+                    (normalize_rom(value) or value).replace(":", "").replace(" ", ""))
             generic[plist_key] = value
             written[plist_key] = value if plist_key != "ROM" else "<bytes>"
     write_config(image, cfg)

@@ -29,10 +29,10 @@ import presets
 from config_model import VMConfig, VMS_DIR
 from gpu_profiles import PROFILES, ALL_KECTS, RESOLUTIONS
 from launch_gen import write_launch
-from kext_switch import apply_profile, apply_smbios
+from kext_switch import apply_apple_services, apply_profile, apply_smbios
 from paths import (MACOS_DISKS, MANAGER, ROOT, pwsh_exe, qemu_for_profile,
                    qemu_img_exe, runtime_env)
-from smbios import MODELS, generate as gen_smbios, model_warning
+from smbios import MODELS, generate as gen_smbios, model_warning, normalize_rom
 
 SECTIONS = ["Host", "VM Settings", "Graphics", "SMBIOS", "Install"]
 ICONS = MANAGER / "icons"
@@ -370,7 +370,7 @@ class MainWindow(QMainWindow):
         cfg.gpu_profile = self.choice.gpu_default
         cfg.cores = min(max(1, self.host.physical_cores or 4), cfg.cores)
         try:
-            cfg.prepare_firmware()
+            apply_apple_services(cfg.prepare_firmware())
             cfg.save()
             write_launch(cfg)
         except Exception as exc:
@@ -444,7 +444,7 @@ class MainWindow(QMainWindow):
                 src = src_dir / name
                 if src.is_file() and not (cfg.vm_dir / name).exists():
                     shutil.copy2(src, cfg.vm_dir / name)
-            cfg.prepare_firmware()
+            apply_apple_services(cfg.prepare_firmware())
             cfg.save()
             write_launch(cfg)
         except Exception as exc:
@@ -870,6 +870,11 @@ class MainWindow(QMainWindow):
                 if self.smbios_values:
                     apply_smbios(image, self.smbios_values.as_dict())
                     self.cfg.smbios = self.smbios_values.as_dict()
+                elif (self.cfg.smbios or {}).get("ROM"):
+                    rom = normalize_rom(self.cfg.smbios["ROM"])
+                    if rom:
+                        self.cfg.smbios["ROM"] = rom
+                        apply_smbios(image, {"ROM": rom})
                 self.cfg.save()
                 write_launch(self.cfg)
                 self._edit_snapshot = copy.deepcopy(self.cfg.to_dict())

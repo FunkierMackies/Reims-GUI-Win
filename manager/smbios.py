@@ -51,6 +51,26 @@ class SmbiosValues:
         }
 
 
+DEFAULT_MAC = "52:54:00:00:00:01"
+
+
+def normalize_rom(rom: str) -> str | None:
+    if not isinstance(rom, str):
+        return None
+    h = re.sub(r"[^0-9A-Fa-f]", "", rom).upper()
+    if len(h) != 12:
+        return None
+    b = bytearray.fromhex(h)
+    b[0] &= 0xFC
+    if not any(b):
+        return None
+    return ":".join(f"{x:02X}" for x in b)
+
+
+def nic_mac(smbios: dict | None) -> str:
+    return normalize_rom((smbios or {}).get("ROM", "")) or DEFAULT_MAC
+
+
 def model_warning(model: str) -> str:
     if model == "iMacPro1,1":
         return INCOMPATIBLE_WARNING
@@ -82,9 +102,7 @@ def generate(model: str = "MacPro7,1", *, macserial: Path = MACSERIAL) -> Smbios
     if not serial or not mlb:
         raise RuntimeError(f"could not parse macserial output: {proc.stdout[:200]!r}")
 
-    # First 6 bytes of a fresh UUID, uppercased hex with colons.
-    rom_hex = uuid.uuid4().hex[:12].upper()
-    rom = ":".join(rom_hex[i:i + 2] for i in range(0, 12, 2))
+    rom = normalize_rom(uuid.uuid4().hex[:12])
 
     return SmbiosValues(
         model=model, serial=serial, mlb=mlb,
