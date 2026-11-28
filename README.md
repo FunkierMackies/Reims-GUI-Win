@@ -112,14 +112,17 @@ and regenerates the `.ps1`.
    capped at host physical cores, memory, NVMe identity, audio, accelerator.
 3. **Graphics** - set the resolution/graphics you want to use in the selector; resolution 854x480 → 3840x2160
    (Apple-GFX capped at maximum 1920x1080); per-profile QEMU binary/device/ROM/kexts.
-4. **SMBIOS** - headless `macserial.exe`; `MacPro7,1` MOST RECOMMENDED;
-   `iMacPro1,1` ALTERNATIVE; shows orange **NOT COMPATIBLE WITH macOS Tahoe**.
+4. **SMBIOS** - headless `macserial.exe`; `MacPro7,1` is the only model
+   presented. A generated ROM is normalized to a valid unicast MAC and is
+   reused as the guest NIC MAC, so SMBIOS and network identity agree.
 5. **Install** - attach any installer ISO (created with createinstallmedia / VMware-style ISO) on a dedicated SATA/AHCI controller.
-6. Audio is **output-only**: `virtio-sound-pci,...,streams=1` exposes just one
-   PCM stream, which QEMU always assigns to playback. The guest has no
-   microphone/capture device, avoiding distorted sound with Bluetooth TWS
-   headsets (host speakers are unaffected). This is fixed in the launcher;
-   regenerate by saving VM settings or launching once.
+6. Audio is per GPU profile. **Reims-Graphics** mirrors reims-ctl: two
+   `virtio-sound-pci` devices (playback + capture), with a silent `none`
+   capture backend on `dsound` since the host has no recording device.
+   **Apple-GFX** keeps a single playback-only `virtio-sound-pci,...,streams=1`
+   stream (no guest microphone, avoiding Bluetooth TWS distortion). The
+   boot chime has been removed entirely — no `AudioDxe.efi`, no HDA device,
+   no `UEFI → Audio` config. Regenerate launchers by saving VM settings.
 
 ## GPU rules
 
@@ -143,12 +146,13 @@ and regenerates the `.ps1`.
   chmod 644 .GlobalPreferences.plist
   reboot
   ```
-- Both GPU stacks have only been tested and confirmed to run well on macOS
-  Tahoe 26.7.1. macOS Monterey (specifically 12.6.1) currently has issues;
-  see the Releases description for details.
+- Both GPU stacks have been confirmed on macOS Tahoe 26.7.1. macOS Monterey
+  (12.6.1) now boots and runs properly with the latest Reims-Graphics.
 - `AppleMCEReporterDisabler.kext` is never touched **(REQUIRED FOR MacPro6,1/MacPro7,1 & iMacPro1,1 SMBIOS)**.
 
-Six CPU presets cover Intel/AMD x AVX-512 x core-band, exactly as specified.
+Eight CPU presets: six covering Intel/AMD x AVX-512 x core-band for RTX hosts,
+plus two no-AVX2 presets (`IvyBridge`) for Intel and AMD hosts where AVX2 is
+absent. Full strings are in `manager/presets.py`.
 
 ## Baseline firmware SMBIOS
 
@@ -164,17 +168,6 @@ to new VMs. Its SMBIOS identity is:
 | ROM | `42E0FF3C4283` (hex, 6 raw bytes) |
 
 Use **Configure VM → SMBIOS** to generate a unique identity per VM.
-
-## Recent changes
-
-- Packaged PyInstaller exe with a monitor-and-stand application icon.
-- Added `.gitignore`, `NOTICE.md`, and GPL-2.0 / GPL-3.0 / LGPL-3.0 / MIT licenses.
-- Unified `.json` and `.ps1` in `vms\<name>\`; removed `generated\`.
-- Stopped creating `.bak-*` OpenCore images.
-- Replaced QMP shutdown with targeted `taskkill` and two-stage popups.
-- Added optional secondary SATA drive (`.qcow2` / `.vhd`).
-- Fixed and improved `Import VM` for cross-drive trees.
-- Set the base firmware SMBIOS (placeholder) to the fixed values above.
 
 ## Licensing
 
@@ -195,6 +188,39 @@ bundled components.
 
 The GPU stacks used by this project are built on the work of
 [steelbrain/reims-vgpu](https://github.com/steelbrain/reims-vgpu) Thanks to his hard work for making macOS VM acceleration possible.
+
+## Recent Changes
+
+- **Host RAM spoofing:** detect the first DIMM via WMI (`ram_info.py` +
+  `read-ram.ps1`) and inject its manufacturer/serial/part into OpenCore
+  `PlatformInfo.CustomMemory`; `-smbios type=17` uses the host clock speed and
+  only adds `memory_type` when that QEMU build accepts it. The guest NIC MAC is
+  derived from the SMBIOS ROM so the two identities agree.
+- **SMBIOS:** `MacPro7,1` is now the only offered model; generated ROM values
+  are normalized to valid unicast MACs. The `iMacPro1,1` alternative and its
+  Tahoe warning were removed.
+- **CPU presets:** added two no-AVX2 presets for hosts without AVX2 — Intel
+  (`IvyBridge ... +pcid,-arat,check`) and AMD (`IvyBridge ... -arat,-pcid,-invpcid,check`),
+  selected automatically when host detection reports `avx2 = false`. Verified
+  on a Monterey VM with the AMD preset.
+- **Accelerator:** `intercept-msr-gp=on` (an AMD workaround) is now dropped
+  automatically on Intel hosts.
+- **OpenCore alignment:** saved VMs apply the known-good Booter/Kernel quirks
+  and Security settings from reims-ctl, and staged kext bundles always replace
+  stale in-image copies.
+- **Graphics picker:** OpenCanopy + OcBinaryData Resources are installed with
+  the GoldenGate variant, a 15-second timeout and a custom background.
+- **FAT safety:** `fatsync` now follows cluster chains for directory writes and
+  directory slot offsets, so fragmented large files (config.plist, Resources)
+  read and delete correctly.
+- **Boot chime removed:** no `AudioDxe.efi`, no HDA device in the launcher, and
+  no firmware audio settings in the OpenCore images.
+- **Launcher:** per-profile specs (root-port properties, audio topology, xHCI
+  ports) keep Reims and Apple-GFX argv correct; rebuilt PyInstaller exe with
+  portable paths and the bundled RAM script.
+- **Secondary drive:** added a **Detach** button so a configured qcow2/vhd can
+  be cleared without typing.
+- **Monterey:** confirmed working with the latest Reims-Graphics.
 
 ## Notes
 

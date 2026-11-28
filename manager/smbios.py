@@ -1,9 +1,7 @@
 """Headless SMBIOS generation via the bundled GenSMBIOS macserial.exe.
 
 Runs macserial.exe directly (no interactive GenSMBIOS prompt, no GUI window),
-from a background thread in the UI. Model policy from the spec:
-  * MacPro7,1  -> MOST RECOMMENDED
-  * iMacPro1,1 -> ALTERNATIVE (warning shown)
+from a background thread in the UI. Only MacPro7,1 is presented.
 """
 
 from __future__ import annotations
@@ -20,10 +18,7 @@ MACSERIAL = macserial_path()
 
 MODELS = [
     ("MacPro7,1", "MOST RECOMMENDED"),
-    ("iMacPro1,1", "ALTERNATIVE - NOT COMPATIBLE WITH macOS Tahoe"),
 ]
-
-INCOMPATIBLE_WARNING = "NOT COMPATIBLE WITH macOS Tahoe"
 
 # `-g -m <model> -n 1` prints "SERIAL | MLB"; `-a` prints
 # "MODEL | SERIAL | MLB". Accept both shapes.
@@ -51,9 +46,30 @@ class SmbiosValues:
         }
 
 
+DEFAULT_MAC = "52:54:00:00:00:01"
+
+
+def normalize_rom(rom: str) -> str | None:
+    """Normalize a ROM value into a valid unicast MAC, or None if unusable."""
+    if not isinstance(rom, str):
+        return None
+    h = re.sub(r"[^0-9A-Fa-f]", "", rom).upper()
+    if len(h) != 12:
+        return None
+    b = bytearray.fromhex(h)
+    b[0] &= 0xFC          # force unicast, clear multicast/local bits
+    if not any(b):
+        return None
+    return ":".join(f"{x:02X}" for x in b)
+
+
+def nic_mac(smbios: dict | None) -> str:
+    """NIC MAC tied to the SMBIOS ROM; falls back to the QEMU default."""
+    return normalize_rom((smbios or {}).get("ROM", "")) or DEFAULT_MAC
+
+
 def model_warning(model: str) -> str:
-    if model == "iMacPro1,1":
-        return INCOMPATIBLE_WARNING
+    """Compatibility warning for the selected model (none for MacPro7,1)."""
     return ""
 
 
@@ -61,10 +77,6 @@ def generate(model: str = "MacPro7,1", *, macserial: Path = MACSERIAL) -> Smbios
     """Generate a fresh, unique SMBIOS tuple. Raises RuntimeError on failure."""
     if not macserial.is_file():
         raise RuntimeError(f"macserial.exe not found: {macserial}")
-    if not any(model == m for m, _ in MODELS):
-        # Still allow other models, but callers surface the Tahoe warning.
-        pass
-
     proc = subprocess.run(
         [str(macserial), "-g", "-m", model, "-n", "1"],
         capture_output=True, text=True, timeout=30,
@@ -82,9 +94,8 @@ def generate(model: str = "MacPro7,1", *, macserial: Path = MACSERIAL) -> Smbios
     if not serial or not mlb:
         raise RuntimeError(f"could not parse macserial output: {proc.stdout[:200]!r}")
 
-    # First 6 bytes of a fresh UUID, uppercased hex with colons.
-    rom_hex = uuid.uuid4().hex[:12].upper()
-    rom = ":".join(rom_hex[i:i + 2] for i in range(0, 12, 2))
+    # First 6 bytes of a fresh UUID, normalized to a valid unicast MAC.
+    rom = normalize_rom(uuid.uuid4().hex[:12])
 
     return SmbiosValues(
         model=model, serial=serial, mlb=mlb,

@@ -160,16 +160,28 @@ class Fat16:
             data += self.read_at(self.cluster_off(c), self.cluster_bytes)
         return data, self.cluster_off(chain[0]), chain
 
+    def _dir_phys(self, base, chain, offset):
+        """Map a logical offset inside a directory to its physical disk offset.
+
+        Root directories are contiguous; subdirectory chains need not be, so
+        base + offset only works for the first cluster.
+        """
+        if not chain:
+            return base + offset
+        idx = offset // self.cluster_bytes
+        within = offset % self.cluster_bytes
+        return self.cluster_off(chain[idx]) + within
+
     def list_dir(self, entry):
         """Yield dicts: name, attr, cluster, size, slot (absolute), lfn_slots."""
-        data, base, _ = self.dir_slots(entry)
+        data, base, chain = self.dir_slots(entry)
         records = []
         lfn = []          # [(absolute_slot, chars)]
         for i in range(0, len(data), 32):
             e = data[i:i + 32]
             if len(e) < 32 or e[0] == END:
                 break
-            slot = base + i
+            slot = self._dir_phys(base, chain, i)
             if e[0] == DELETED:
                 lfn = []
                 continue
@@ -300,8 +312,31 @@ class Fat16:
             self.write_fat(chain[-1], new)
             run_start = len(slots) * 32
             data = data + b"\x00" * self.cluster_bytes
-        self.write_at(base + run_start, block)
+        # A directory may span several FAT clusters that are not contiguous.
+        # base + run_start only works for the first cluster; map the offset
+        # through the chain so writes land in the right cluster.
+        self._write_dir_bytes(data, base, chain, run_start, block)
         return run_start
+
+    def _write_dir_bytes(self, data, base, chain, offset, block):
+        """Write bytes at a directory offset, following the cluster chain."""
+        if not chain:  # root directory is contiguous
+            self.write_at(base + offset, block)
+            return
+        written = 0
+        while written < len(block):
+            idx = offset // self.cluster_bytes
+            within = offset % self.cluster_bytes
+            while idx >= len(chain):
+                new = self.alloc(1)[0]
+                self.write_at(self.cluster_off(new), b"\x00" * self.cluster_bytes)
+                self.write_fat(chain[-1], new)
+                chain.append(new)
+            take = min(len(block) - written, self.cluster_bytes - within)
+            self.write_at(self.cluster_off(chain[idx]) + within,
+                          block[written:written + take])
+            written += take
+            offset += take
 
     def put(self, parent, name, data):
         used = {r["short"].encode("latin-1") for r in self.list_dir(parent)}

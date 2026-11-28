@@ -2,7 +2,8 @@
 
 The six CPU cases are the full matrix of:
     vendor (Intel / AMD) x AVX-512 (no / yes) x physical cores (2-8 / >8)
-for NVIDIA RTX hosts. The -cpu strings are verbatim; do not reformat them.
+for NVIDIA RTX hosts, plus two cases for hosts without AVX2. The -cpu strings
+are verbatim; do not reformat them.
 """
 
 from __future__ import annotations
@@ -29,6 +30,11 @@ INTEL_AVX512 = (
     "model-id=Intel(R) Xeon(R) W-3275M CPU @ 2.50GHz,"
     "+ssse3,+sse4.2,+popcnt,+avx,+avx2,+aes,+xsave,+xsaveopt,-arat,check"
 )
+INTEL_NO_AVX2 = (
+    "IvyBridge,vendor=GenuineIntel,"
+    "model-id=Intel(R) Xeon(R) CPU E5-2697 v2 @ 2.70GHz,"
+    "+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,+pcid,-arat,check"
+)
 
 AMD_2_8 = (
     "Skylake-Client-v4,vendor=GenuineIntel,"
@@ -46,6 +52,12 @@ AMD_AVX512 = (
     "Cascadelake-Server-v4,vendor=GenuineIntel,"
     "model-id=Intel(R) Xeon(R) W-3275M CPU @ 2.50GHz,"
     "+ssse3,+sse4.2,+popcnt,+avx,+avx2,+aes,+xsave,+xsaveopt,"
+    "-arat,-pcid,-invpcid,check"
+)
+AMD_NO_AVX2 = (
+    "IvyBridge,vendor=GenuineIntel,"
+    "model-id=Intel(R) Xeon(R) CPU E5-2697 v2 @ 2.70GHz,"
+    "+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,"
     "-arat,-pcid,-invpcid,check"
 )
 
@@ -89,6 +101,15 @@ def choose_preset(host: HostSpec) -> PresetChoice:
     def make(key: str, cpu: str, reason: str) -> PresetChoice:
         return PresetChoice(key, cpu, reason, gpu_default, reims_label, apple_label)
 
+    if host.avx2 is False:
+        # No AVX2: IvyBridge avoids the AVX2 feature bits entirely.
+        if host.cpu_vendor == "AMD":
+            return make("amd-no-avx2", AMD_NO_AVX2,
+                        "AMD host without AVX2 (IvyBridge preset)")
+        if host.cpu_vendor == "Intel":
+            return make("intel-no-avx2", INTEL_NO_AVX2,
+                        "Intel host without AVX2 (IvyBridge preset)")
+
     if host.cpu_vendor == "Intel":
         if host.avx512:
             return make("intel-avx512", INTEL_AVX512,
@@ -121,6 +142,8 @@ def choose_preset(host: HostSpec) -> PresetChoice:
 
 
 PRESET_TABLE = [
+    ("Intel, no AVX2", INTEL_NO_AVX2, "reims"),
+    ("AMD, no AVX2", AMD_NO_AVX2, "reims"),
     ("Intel, AVX+AVX2, no AVX-512, 2-8 cores, RTX", INTEL_2_8, "reims"),
     ("Intel, AVX+AVX2, no AVX-512, >8 cores, RTX", INTEL_GT8, "reims"),
     ("Intel, AVX+AVX2+AVX-512, RTX", INTEL_AVX512, "reims"),

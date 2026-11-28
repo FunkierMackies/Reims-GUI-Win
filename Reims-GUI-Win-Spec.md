@@ -80,18 +80,31 @@ Paths:
 
 Host values drive the preset directly. The CPU preset field in the VM tab is
 locked (read-only, greyed, disabled) - it cannot be edited. Cores are capped at
-detected physical cores.
+detected physical cores. `intercept-msr-gp=on` (an AMD workaround) is stripped
+from the accelerator string automatically on Intel hosts.
 
-## 3. CPU presets (verbatim, six cases)
+Host RAM identity is read from the first usable DIMM (`ram_info.py` +
+`read-ram.ps1`, WMI `Win32_PhysicalMemory`) and injected into OpenCore's
+`PlatformInfo.CustomMemory`, with the host clock speed in `-smbios type=17`.
+`memory_type=26` is only added when the selected QEMU build accepts it
+(Apple-GFX's older build rejects it).
+
+## 3. CPU presets (verbatim, eight cases)
 
 Intel + RTX:
 
-- AVX/AVX2, no AVX-512, 2-8 cores -> `Skylake-Client-v4 ... i7-10700 ... ,-arat,enforce`
-- AVX/AVX2, no AVX-512, >8 cores -> `Skylake-Client-v4 ... Xeon W-2191B ... ,-arat,enforce`
-- AVX/AVX2/AVX-512 -> `Cascadelake-Server-v4 ... Xeon W-3275M ... ,-arat,enforce`
+- AVX/AVX2, no AVX-512, 2-8 cores -> `Skylake-Client-v4 ... i7-10700 ... ,-arat,check`
+- AVX/AVX2, no AVX-512, >8 cores -> `Skylake-Client-v4 ... Xeon W-2191B ... ,-arat,check`
+- AVX/AVX2/AVX-512 -> `Cascadelake-Server-v4 ... Xeon W-3275M ... ,-arat,check`
 
 AMD + RTX: same three models, but the tail is `,-arat,-pcid,-invpcid,check`.
 
+No-AVX2 (checked first when `host.avx2 is False`, before AVX-512/core-band):
+
+- Intel: `IvyBridge,vendor=GenuineIntel,model-id=Intel(R) Xeon(R) CPU E5-2697 v2 @ 2.70GHz,+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,+pcid,-arat,check`
+- AMD: `IvyBridge,vendor=GenuineIntel,model-id=Intel(R) Xeon(R) CPU E5-2697 v2 @ 2.70GHz,+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,-arat,-pcid,-invpcid,check`
+
+The AMD no-AVX2 preset was verified on a Monterey VM (boots to the desktop).
 Full strings live in `manager/presets.py`. A generic fallback is used when
 detection is inconclusive and is flagged in the UI.
 
@@ -146,18 +159,24 @@ Icon-toolbar actions: Start VM (hidden PowerShell, crash popup), Shutdown VM
 `scripts/fatsync.py` helpers. It edits `EFI/OC/config.plist` inside the VM-local
 `OpenCore.img`: toggles `Kernel.Add[].Enabled`, adds missing entries when the
 bundle is present in the image, stages bundles from `manager/kexts/`, and writes
-with `replace_file` so the plist may grow. Base firmware is only edited for
-the fixed baseline SMBIOS identity; profile and SMBIOS writes to VM-local
-images no longer create `.bak` copies.
+with `replace_file` so the plist may grow. Staged bundles now **replace** any
+stale copy already in the image. Saving also applies the reference Booter/Kernel
+quirks and Security settings from the known-good reims-ctl image, injects host
+RAM identity into `PlatformInfo.CustomMemory`, and configures the OpenCanopy
+GoldenGate picker (15 s timeout, custom background). FAT reads/writes follow
+cluster chains, so fragmented config.plist and Resources files are safe.
+Base firmware is only edited for the fixed baseline SMBIOS identity; profile
+and SMBIOS writes to VM-local images no longer create `.bak` copies.
 
 ## 6. SMBIOS
 
 Headless `macserial.exe -g -m <model> -n 1` from the bundled GenSMBIOS. Generates
 serial, MLB, UUID, and a 6-byte colon-separated ROM, off the UI thread.
 
-- `MacPro7,1` - **MOST RECOMMENDED**
-- `iMacPro1,1` - ALTERNATIVE; selecting it shows an orange note below the
-  model selector: **NOT COMPATIBLE WITH macOS Tahoe**
+- `MacPro7,1` - **MOST RECOMMENDED**, and now the only model presented. The
+  `iMacPro1,1` alternative and its Tahoe incompatibility warning were removed.
+- Generated ROM values are normalized to valid unicast MACs (`normalize_rom`)
+  and mirrored to the guest NIC, so macOS reports a consistent identity.
 - The base firmware image `manager\Backend-Apps\Firmware\OpenCore-rgfx-3kext.img`
   is preconfigured with: `MacPro7,1`, serial `W0000000001`,
   UUID `3075185E-D610-4C2D-BA85-A0D2E102C352`, MLB `F5K248401GUK3F7UE`,
@@ -183,18 +202,29 @@ serial, MLB, UUID, and a 6-byte colon-separated ROM, off the UI thread.
   `manager\Launch VM.cmd` bypasses execution policy for one-click launch.
 - Critical fix: `-vga none` is required. Without it QEMU auto-adds a VGA at
   slot 1, which collides with the `pcie-root-port` and aborts the boot.
-- Launch command keeps the established flags: `whpx,hyperv=off,intercept-msr-gp=on`,
-  the selected `-cpu` preset, `-smp <n>,cores=<n>`, NVMe with model
-  `TM8FP6512G` / serial `TM8FP4512G0C101`, `virtio-sound-pci` with `-audiodev
-  dsound` and `streams=1` (playback only, no guest microphone), and the selected
-  GPU device/ROM.
+- `LaunchSpec` per profile: Reims uses `speed=16,width=32` on the root port,
+  dual virtio-sound (playback + silent capture) and xHCI `p2=7,p3=7`;
+  Apple-GFX uses `x-speed=16,x-width=32`, one playback-only stream and
+  `p2=8,p3=6`. The older Apple-GFX QEMU rejects `speed/width` and `memory_type`.
+- Launch command keeps the established flags: `whpx` (with `intercept-msr-gp=on`
+  only on AMD hosts), the selected `-cpu` preset, `-smp <n>,cores=<n>`, NVMe
+  with model `TM8FP6512G` / serial `TM8FP4512G0C101`, a NIC MAC derived from
+  the SMBIOS ROM, `-audiodev dsound`, and the selected GPU device/ROM.
+- There is no boot chime: `AudioDxe.efi`, the `ich9-intel-hda`/`hda-output`
+  devices, and all `UEFI → Audio` settings were removed from launchers,
+  helpers, UI, and the OpenCore baseline images.
 
 ## 8. Known gaps and risks
 
 - The generic fallback CPU preset is used when detection is inconclusive; there
-  are no manual overrides by design.
-- Audio capture is disabled in the guest (`streams=1`); this is intentional to
-  avoid Bluetooth TWS distortion. Output still works.
+  are no manual overrides by design. No-AVX2 presets apply only when detection
+  explicitly reports `avx2 = false`.
+- Reims-Graphics exposes guest audio capture but backs it with a silent input
+  backend on `dsound` (the host has no recording device). Apple-GFX keeps one
+  playback-only stream to avoid Bluetooth TWS distortion.
+- Running a VM from a non-interactive shell or a captured stdout pipe can starve
+  the Reims GPU window and show "Missing GOP" / a stall at the TianoCore splash;
+  launch through the Manager, which writes QEMU output to `qemu-launch.log`.
 
 ## 9. Permission boundary
 

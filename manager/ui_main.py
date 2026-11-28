@@ -29,7 +29,8 @@ import presets
 from config_model import VMConfig, VMS_DIR, safe_name
 from gpu_profiles import PROFILES, ALL_KECTS, RESOLUTIONS
 from launch_gen import write_launch
-from kext_switch import apply_profile, apply_bootargs, apply_smbios
+from kext_switch import (apply_profile, apply_bootargs, apply_reference_quirks,
+                         apply_custom_memory, apply_smbios)
 from paths import (MACOS_DISKS, MANAGER, ROOT, pwsh_exe, qemu_for_profile,
                    qemu_img_exe, runtime_env)
 from smbios import MODELS, generate as gen_smbios, model_warning
@@ -37,6 +38,23 @@ from smbios import MODELS, generate as gen_smbios, model_warning
 SECTIONS = ["Host", "VM Settings", "Graphics", "SMBIOS", "Install"]
 ICONS = MANAGER / "icons"
 KECTS = MANAGER / "kexts"
+APP_VERSION = "v1.0.1"
+APP_TITLE = f"Reims GUI Manager {APP_VERSION}"
+
+
+def inject_custom_memory(image: Path, cfg: "VMConfig") -> None:
+    """Inject host RAM identity and speed into the VM's OpenCore config."""
+    from launch_gen import host_ram_speed
+    from ram_info import first_module
+    module = first_module()
+    apply_custom_memory(
+        image,
+        memory_mb=cfg.memory_mb,
+        speed=host_ram_speed(),
+        manufacturer=module.manufacturer if module else "",
+        serial=module.serial if module else "",
+        part=module.part if module else "",
+    )
 
 
 def icon(name: str) -> QIcon:
@@ -174,7 +192,7 @@ class CreateVmDialog(QDialog):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Reims GUI Manager - macOS VM")
+        self.setWindowTitle(APP_TITLE)
         self.resize(1150, 760)
         app_icon = QIcon(str(ICONS / "app.png"))
         if not app_icon.isNull():
@@ -277,9 +295,13 @@ class MainWindow(QMainWindow):
                                                Qt.SmoothTransformation))
         self.logo_label.setAlignment(Qt.AlignCenter)
         ll.addWidget(self.logo_label)
-        title = QLabel("Reims GUI Manager")
-        title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont("", 16, QFont.Bold))
+        title = QLabel(APP_TITLE)
+        title.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        # Use an explicit upright family: the empty-family default can resolve
+        # to a slanted face on some systems, making the heading look crooked.
+        title_font = QFont("Segoe UI", 16, QFont.Bold)
+        title_font.setItalic(False)
+        title.setFont(title_font)
         ll.addWidget(title)
         hint = QLabel("Select a VM to view its applied settings, or create / import one.")
         hint.setAlignment(Qt.AlignCenter)
@@ -372,7 +394,12 @@ class MainWindow(QMainWindow):
         cfg.gpu_profile = self.choice.gpu_default
         cfg.cores = min(max(1, self.host.physical_cores or 4), cfg.cores)
         try:
-            cfg.prepare_firmware()
+            image = cfg.prepare_firmware()
+            apply_profile(image, cfg.gpu_profile,
+                          staged_kexts=KECTS if KECTS.exists() else None)
+            apply_bootargs(image)
+            apply_reference_quirks(image)
+            inject_custom_memory(image, cfg)
             cfg.save()
             write_launch(cfg)
         except Exception as exc:
@@ -446,7 +473,12 @@ class MainWindow(QMainWindow):
                 src = src_dir / name
                 if src.is_file() and not (cfg.vm_dir / name).exists():
                     shutil.copy2(src, cfg.vm_dir / name)
-            cfg.prepare_firmware()
+            image = cfg.prepare_firmware()
+            apply_profile(image, cfg.gpu_profile,
+                          staged_kexts=KECTS if KECTS.exists() else None)
+            apply_bootargs(image)
+            apply_reference_quirks(image)
+            inject_custom_memory(image, cfg)
             cfg.save()
             write_launch(cfg)
         except Exception as exc:
@@ -636,9 +668,13 @@ class MainWindow(QMainWindow):
         self.secondary_edit.setPlaceholderText("None (optional)")
         pick_secondary = QPushButton("Pick qcow2/vhd...")
         pick_secondary.clicked.connect(self.pick_secondary_drive)
+        detach_secondary = QPushButton("Detach")
+        detach_secondary.setToolTip("Detach the secondary drive from this VM")
+        detach_secondary.clicked.connect(self.detach_secondary_drive)
         secondary_row = QHBoxLayout()
         secondary_row.addWidget(self.secondary_edit)
         secondary_row.addWidget(pick_secondary)
+        secondary_row.addWidget(detach_secondary)
         self.cpu_edit = QLineEdit()
         self.cpu_edit.setDisabled(True)
         self.cpu_edit.setStyleSheet(
@@ -701,6 +737,10 @@ class MainWindow(QMainWindow):
             "Virtual disks (*.qcow2 *.vhd);;All files (*)")
         if path:
             self.secondary_edit.setText(path)
+
+    def detach_secondary_drive(self):
+        """Detach the secondary drive from this VM."""
+        self.secondary_edit.clear()
 
     def create_disk(self):
         path = make_qcow2(self, self.newdisk_name.text(), self.newdisk_size.value())
@@ -873,9 +913,17 @@ class MainWindow(QMainWindow):
                 apply_profile(image, self.cfg.gpu_profile,
                               staged_kexts=staged if staged.exists() else None)
                 apply_bootargs(image)
+                apply_reference_quirks(image)
                 if self.smbios_values:
                     apply_smbios(image, self.smbios_values.as_dict())
                     self.cfg.smbios = self.smbios_values.as_dict()
+                elif (self.cfg.smbios or {}).get("ROM"):
+                    from smbios import normalize_rom
+                    rom = normalize_rom(self.cfg.smbios["ROM"])
+                    if rom:
+                        self.cfg.smbios["ROM"] = rom
+                        apply_smbios(image, {"ROM": rom})
+                inject_custom_memory(image, self.cfg)
                 self.cfg.save()
                 write_launch(self.cfg)
                 self._edit_snapshot = copy.deepcopy(self.cfg.to_dict())

@@ -38,7 +38,9 @@ Double-click `manager\Reims GUI Manager.exe`.
   `Shutdown Requested` then `Shutdown Success` popups.
 - **Configure VM** opens the settings editor (Host / VM Settings / Graphics /
   SMBIOS / Install), including an optional **Secondary Drive (qcow2/vhd)** on
-  SATA. Saving applies kext/SMBIOS changes without creating `.bak` images.
+  SATA with a **Detach** button. Saving applies kext/SMBIOS changes, the
+  reims-ctl OpenCore quirks, host RAM identity, and a regenerated launcher,
+  without creating `.bak` images.
 - **Remove VM** permanently deletes the VM folder and its qcow2/vhd disks
   after a warning (shared disks are kept).
 
@@ -54,10 +56,26 @@ macOS-disks/        (not in git) qcow2/vhd disks
 licenses/           full license texts (GPL-2.0, GPL-3.0, LGPL-3.0)
 ```
 
+## Source notes
+
+- `manager/presets.py` — eight CPU presets (six RTX + two no-AVX2 `IvyBridge`),
+  plus the generic fallback; chosen from `host_detect.HostSpec`.
+- `manager/launch_gen.py` — single source of truth for QEMU argv. Per-profile
+  `LaunchSpec` keeps Reims (dual virtio-sound, `speed/width` root port,
+  `p2=7,p3=7`) and Apple-GFX (playback-only sound, `x-speed/x-width`,
+  `p2=8,p3=6`) correct. `intercept-msr-gp=on` is dropped on Intel hosts.
+- `manager/ram_info.py` + `read-ram.ps1` — host DIMM identity and clock speed;
+  injected into OpenCore `CustomMemory` and used for `-smbios type=17`.
+- `manager/smbios.py` — `MacPro7,1` only; ROM values normalized to unicast MACs
+  and mirrored to the guest NIC.
+- `manager/kext_switch.py` — staged kexts replace stale bundles, applies
+  reference quirks, CustomMemory and the OpenCanopy/GoldenGate picker.
+- `manager/Backend-Apps/Scripts/fatsync.py` — FAT16 writes and directory
+  offsets follow cluster chains (fragmented large files are safe).
+
 ## Documentation
 
-- `README.md` — repository overview and licensing summary.
-- `README.md` — full user guide, location, and architecture notes.
+- `README.md` — full user guide, location, licensing, credits and Recent Changes.
 - `Reims-GUI-Win-Spec.md` — design specification.
 - `NOTICE.md` — third-party attribution.
 
