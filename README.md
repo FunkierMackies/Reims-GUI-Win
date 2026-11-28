@@ -106,15 +106,15 @@ Saving commits every section at once - including SMBIOS values and the graphics
 profile - applies the kext set to that VM's OpenCore image, writes the `.json`,
 and regenerates the `.ps1`.
 
-1. **Host** - detected on every open; explains why (CPU spoof + GPU selection).
+1. **Host** - detected on every open; explains why (CPU & RAM spoof + GPU selection).
 2. **VM Settings** - name, disk (pick/create qcow2), secondary disk (optional, only .qcow2 & .vhd format are supported), locked CPU preset, cores
-   capped at host physical cores, memory, NVMe identity, audio, accelerator.
+   capped at maximum host physical cores, memory, NVMe identity, audio, accelerator.
 3. **Graphics** - set the resolution/graphics you want to use in the selector; resolution 854x480 → 3840x2160
    (Apple-GFX capped at maximum 1920x1080) or Max for Fullscreen Experience `(Detect Host Maximum Resolution)`;
    per-profile QEMU binary/device/ROM/kexts.
 5. **SMBIOS** - headless `macserial.exe`; `MacPro7,1` is the only model
-   presented. A generated ROM is normalized to a valid unicast MAC and is
-   reused as the guest NIC MAC, so SMBIOS and network identity agree.
+   presented. A generated ROM is normalized to a valid unicast MAC Address and is
+   reused as the guest NIC MAC Address, so SMBIOS and network identity matched.
 6. **Install** - attach any installer ISO (created with createinstallmedia / VMware-style ISO) on a dedicated SATA/AHCI controller.
 7. Audio is per GPU profile. **Reims-Graphics** mirrors from reims-ctl: two
    `virtio-sound-pci` devices (playback + capture), with a silent `none`
@@ -149,7 +149,7 @@ and regenerates the `.ps1`.
 - `AppleMCEReporterDisabler.kext` is never touched **(REQUIRED FOR MacPro6,1/MacPro7,1 & iMacPro1,1 SMBIOS)**.
 
 Eight CPU presets: six covering Intel/AMD x AVX-512 x core-band for RTX hosts,
-plus two no-AVX2 presets (`Spoofed as IvyBridge`) for Intel and AMD hosts where AVX2 is
+plus two no-AVX2 presets (`Spoofed as IvyBridge & Xeon E5 V2`) for Intel and AMD hosts where AVX2 is
 absent/unavailable.
 
 ## Baseline firmware SMBIOS
@@ -189,12 +189,12 @@ The GPU stacks & QEMU of Reims-Graphics used by this project are built on the wo
 
 ## Recent Changes
 
-- **Host RAM spoofing:** detect the first DIMM via WMI (`ram_info.py` +
-  `read-ram.ps1`) and inject its manufacturer/serial/part into OpenCore
+- **Guest RAM spoofing:** detect the first Host DIMM via WMI (`ram_info.py` +
+  `read-ram.ps1`) and inject its manufacturer/serial/part into Guest OpenCore
   `PlatformInfo.CustomMemory`; `-smbios type=17` uses the host clock speed and
-  only adds `memory_type` when that QEMU build accepts it.
+  adds `memory_type=26 (DDR4)` with ReimsQEMU or inject the memory_type into Guest OpenCore with AppleGFX-QEMU
 - **SMBIOS:** `MacPro7,1` is now the only offered model; generated ROM values
-  are normalized to valid unicast MACs. The `iMacPro1,1` alternative and its
+  are normalized to valid unicast MAC Address. The `iMacPro1,1` alternative and its
   Tahoe warning were removed.
 - **Fix macOS Tahoe Apple ID Login:** Resolved Apple ID sign-in issues on macOS Tahoe by marking Ethernet as built-in `(built-in = 01, en0)`,
   `binding the generated SMBIOS MAC address` to the VirtIO Ethernet adapter,
@@ -204,7 +204,7 @@ The GPU stacks & QEMU of Reims-Graphics used by this project are built on the wo
   selected automatically when host detection reports `avx2 = false`. Verified Booted
   on macOS Monterey VM with the AMD preset.
 - **Non-AVX2 CPU Support (Up To macOS Monterey):** Added Intel and AMD non-AVX2 CPU presets to support booting macOS
-  **up to macOS Monterey** on older host processors `(Intel Sandy Bridge or AMD FX minimum)`.
+  **up to macOS Monterey** on older host processors `(Intel Core/Xeon Sandy/Ivy Bridge or AMD FX)`.
 - **OpenCore GUI Picker Added:** Initializing OpenCanopy + OcBinaryData Resources with
   the GoldenGate variant, a 15-second boot timeout is set and a custom background (Reims-GUI-Manager Logo) <img width="1740" height="1005" alt="image" src="https://github.com/user-attachments/assets/3864c308-acad-4515-8770-6d4af3e6c88e" />
 - **FAT safety:** `fatsync` now follows cluster chains for directory writes and
