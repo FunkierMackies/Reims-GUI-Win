@@ -148,9 +148,9 @@ and regenerates the `.ps1`.
   (12.6.1) now boots and runs almost flawlessly with the latest Reims-Graphics.
 - `AppleMCEReporterDisabler.kext` is never touched **(REQUIRED FOR MacPro6,1/MacPro7,1 & iMacPro1,1 SMBIOS)**.
 
-Eight CPU presets: six covering Intel/AMD x AVX-512 x core-band for RTX hosts,
+Eight CPU presets: six covering Intel/AMD x AVX2/AVX-512 x core-band for RTX/NON-RTX hosts,
 plus two no-AVX2 presets (`Spoofed as IvyBridge & Xeon E5 V2`) for Intel and AMD hosts where AVX2 is
-absent/unavailable.
+missing/unavailable.
 
 ## Baseline firmware SMBIOS
 
