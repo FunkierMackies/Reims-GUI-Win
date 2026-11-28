@@ -110,12 +110,13 @@ and regenerates the `.ps1`.
 2. **VM Settings** - name, disk (pick/create qcow2), secondary disk (optional, only .qcow2 & .vhd format are supported), locked CPU preset, cores
    capped at host physical cores, memory, NVMe identity, audio, accelerator.
 3. **Graphics** - set the resolution/graphics you want to use in the selector; resolution 854x480 → 3840x2160
-   (Apple-GFX capped at maximum 1920x1080); per-profile QEMU binary/device/ROM/kexts.
-4. **SMBIOS** - headless `macserial.exe`; `MacPro7,1` is the only model
+   (Apple-GFX capped at maximum 1920x1080) or Max for Fullscreen Experience `(Detect Host Maximum Resolution)`;
+   per-profile QEMU binary/device/ROM/kexts.
+5. **SMBIOS** - headless `macserial.exe`; `MacPro7,1` is the only model
    presented. A generated ROM is normalized to a valid unicast MAC and is
    reused as the guest NIC MAC, so SMBIOS and network identity agree.
-5. **Install** - attach any installer ISO (created with createinstallmedia / VMware-style ISO) on a dedicated SATA/AHCI controller.
-6. Audio is per GPU profile. **Reims-Graphics** mirrors from reims-ctl: two
+6. **Install** - attach any installer ISO (created with createinstallmedia / VMware-style ISO) on a dedicated SATA/AHCI controller.
+7. Audio is per GPU profile. **Reims-Graphics** mirrors from reims-ctl: two
    `virtio-sound-pci` devices (playback + capture), with a silent `none`
    capture backend on `dsound` since the host has no recording device.
    **Apple-GFX** keeps a single playback-only `virtio-sound-pci,...,streams=1`
