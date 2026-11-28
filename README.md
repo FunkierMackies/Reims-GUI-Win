@@ -221,7 +221,7 @@ The GPU stacks & QEMU of Reims-Graphics used by this project are built on the wo
 
 ## Notes
 
-- Two QEMU builds: Reims uses `Backend-Apps\ReimsQEMU\qemu-system-x86_64.exe` (newer, 2026-11-17);
+- Two QEMU builds: Reims uses `Backend-Apps\ReimsQEMU\qemu-system-x86_64.exe` (newer, 2026-11-27);
   Apple-GFX uses `Backend-Apps\AppleGFX-QEMU\` imported from `D:\qemu-rg-check\build4` (2026-11-07 build).
 - The generic fallback CPU preset is used when detection is inconclusive; there
   are no manual overrides by design.
