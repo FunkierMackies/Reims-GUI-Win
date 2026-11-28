@@ -206,7 +206,7 @@ The GPU stacks & QEMU of Reims-Graphics used by this project are built on the wo
 - **Non-AVX2 CPU Support (Up To macOS Monterey):** Added Intel and AMD non-AVX2 CPU presets to support booting macOS
   **up to macOS Monterey** on older host processors `(Intel Sandy Bridge or AMD FX minimum)`.
 - **OpenCore GUI Picker Added:** Initializing OpenCanopy + OcBinaryData Resources with
-  the GoldenGate variant, a 15-second boot timeout is set and a custom background <img width="1740" height="1005" alt="image" src="https://github.com/user-attachments/assets/3864c308-acad-4515-8770-6d4af3e6c88e" />
+  the GoldenGate variant, a 15-second boot timeout is set and a custom background (Reims-GUI-Manager Logo) <img width="1740" height="1005" alt="image" src="https://github.com/user-attachments/assets/3864c308-acad-4515-8770-6d4af3e6c88e" />
 - **FAT safety:** `fatsync` now follows cluster chains for directory writes and
   directory slot offsets, so fragmented large files (config.plist, Resources)
   read and delete correctly.
