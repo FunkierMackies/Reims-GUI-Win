@@ -204,7 +204,7 @@ The GPU stacks & QEMU of Reims-Graphics used by this project are built on the wo
   selected automatically when host detection reports `avx2 = false`. Verified Booted
   on macOS Monterey VM with the AMD preset.
 - **Non-AVX2 CPU Support (Up To macOS Monterey):** Added Intel and AMD non-AVX2 CPU presets to support booting macOS
-  `up to macOS Monterey` on older host processors `(Intel Sandy Bridge or AMD FX minimum)`.
+  **up to macOS Monterey** on older host processors `(Intel Sandy Bridge or AMD FX minimum)`.
 - **OpenCore GUI Picker Added:** Initializing OpenCanopy + OcBinaryData Resources with
   the GoldenGate variant, a 15-second boot timeout is set and a custom background <img width="1740" height="1005" alt="image" src="https://github.com/user-attachments/assets/3864c308-acad-4515-8770-6d4af3e6c88e" />
 - **FAT safety:** `fatsync` now follows cluster chains for directory writes and
@@ -217,6 +217,7 @@ The GPU stacks & QEMU of Reims-Graphics used by this project are built on the wo
   portable paths and the bundled RAM script.
 - **Secondary drive:** added a **Detach** button so a configured qcow2/vhd can
   be cleared just by clicking a button.
+- **macOS Monterey & Guest cannot restart issue is fixed:** Now macOS Monterey can successfully launches Minecraft & FCP 10.6.4 Video Playback is Working **(There's still an issue with FCP, read the Releases Known Issues for more information)**. Guest restart is also fixed (Tested Installing macOS Sonoma 14.8.9 & macOS Monterey 12.6.1). <img width="1536" height="836" alt="image" src="https://github.com/user-attachments/assets/12523ff8-39eb-4d26-9619-20c6521c4f00" />
 
 ## Notes
 
