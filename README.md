@@ -216,7 +216,7 @@ The GPU stacks & QEMU of Reims-Graphics used by this project are built on the wo
   ports) of Reims and Apple-GFX keep argv correct; rebuilt PyInstaller exe with
   portable paths and the bundled RAM script.
 - **Secondary drive:** added a **Detach** button so a configured qcow2/vhd can
-  be cleared just by clicking a button.
+  be detached just by clicking a button.
 - **macOS Monterey & Guest cannot restart issue is fixed:** Now macOS Monterey can successfully launches Minecraft & FCP 10.6.4 Video Playback is Working **(There's still an issue with FCP, read the Releases Known Issues for more information)**. Guest restart is also fixed (Tested Installing macOS Sonoma 14.8.9 & macOS Monterey 12.6.1). <img width="1536" height="836" alt="image" src="https://github.com/user-attachments/assets/12523ff8-39eb-4d26-9619-20c6521c4f00" />
 
 ## Notes
