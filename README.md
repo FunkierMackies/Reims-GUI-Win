@@ -198,7 +198,7 @@ The GPU stacks & QEMU of Reims-Graphics used by this project are built on the wo
   Tahoe warning were removed.
 - **Fix macOS Tahoe Apple ID Login:** Resolved Apple ID sign-in issues on macOS Tahoe by marking Ethernet as built-in `(built-in = 01, en0)`,
   `binding the generated SMBIOS MAC address` to the VirtIO Ethernet adapter,
-  and adding `kern.hv_vmm_present = 0` so macOS detects the VM as non-VM. Thanks to https://github.com/Los33c
+  and adding `kern.hv_vmm_present = 0` so macOS detects the VM as non-VM. Thanks to [Los33c](https://github.com/Los33c)
 - **CPU presets:** added two no-AVX2 presets for hosts without AVX2 --- Intel
   (`IvyBridge ... +pcid,-arat,check`) or AMD (`IvyBridge ... -arat,-pcid,-invpcid,check`),
   selected automatically when host detection reports `avx2 = false`. Verified Booted
