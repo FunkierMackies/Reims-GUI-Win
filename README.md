@@ -8,7 +8,6 @@ of the OpenCore firmware image; it does not rebuild QEMU.
 
 ## Acknowledgments
 This project was developed entirely with the assistance of AI tools (Deepseek-v4.1-Flash & HY4 Flash)
-**DO NOT USE THE SOURCE CODE FOR RIGHT NOW, IT'S HALF UPDATED**
 
 ## Location
 
@@ -84,8 +83,8 @@ paths chosen by the user are never changed.
   returns silently.
 - **Secondary Drive (qcow2/vhd)** — optional second disk on the SATA bus
   (`sata.0`; OpenCore uses `sata.2`). The picker accepts only `.qcow2` and
-  `.vhd` files; `.vhd` is passed to QEMU as `format=vpc`. Clearing the field
-  removes the drive.
+  `.vhd` files; `.vhd` is passed to QEMU as `format=vpc`. Clearing the field Or with Button `Detach`
+  removes the drive from VM.
 - **Remove VM** (below the list) permanently deletes the VM directory
   (`.json`, `.ps1`, `OpenCore.img`, logs) **and its qcow2 main disk and its secondary vhd/qcow2 disk** after a
   warning and confirming.
@@ -116,13 +115,11 @@ and regenerates the `.ps1`.
    presented. A generated ROM is normalized to a valid unicast MAC and is
    reused as the guest NIC MAC, so SMBIOS and network identity agree.
 5. **Install** - attach any installer ISO (created with createinstallmedia / VMware-style ISO) on a dedicated SATA/AHCI controller.
-6. Audio is per GPU profile. **Reims-Graphics** mirrors reims-ctl: two
+6. Audio is per GPU profile. **Reims-Graphics** mirrors from reims-ctl: two
    `virtio-sound-pci` devices (playback + capture), with a silent `none`
    capture backend on `dsound` since the host has no recording device.
    **Apple-GFX** keeps a single playback-only `virtio-sound-pci,...,streams=1`
-   stream (no guest microphone, avoiding Bluetooth TWS distortion). The
-   boot chime has been removed entirely — no `AudioDxe.efi`, no HDA device,
-   no `UEFI → Audio` config. Regenerate launchers by saving VM settings.
+   stream (no guest microphone, avoiding Bluetooth TWS distortion).
 
 ## GPU rules
 
@@ -131,8 +128,8 @@ and regenerates the `.ps1`.
 - **Non-RTX** (AMD / Intel / NVIDIA GTX / GT) -> Apple-GFX default (same selector text).
 - Default profile still follows the RTX rule; the parenthetical text is fixed.
 - Reims-Graphics requires the **Graft**, **ReimsGraphics**, and **RgfxGate**
-  kexts. It delivers the best overall performance and acceleration, though it
-  has only been tested on NVIDIA RTX systems (specifically RTX Blackwell).
+  kexts. It delivers the best overall performance and acceleration, and the latest build of `Reims-Graphics` 
+  should now supports **NVIDIA RTX**, **AMD RDNA**, and **Intel UHD & Arc** series GPUs.
 - Apple-GFX requires only the **Lilu** and **ReimsMetalCompat** kexts. It offers
   broad hardware compatibility across a wide range of GPUs, but lacks OpenGL
   support and delivers lower performance compared to Reims-Graphics.
@@ -146,13 +143,13 @@ and regenerates the `.ps1`.
   chmod 644 .GlobalPreferences.plist
   reboot
   ```
-- Both GPU stacks have been confirmed on macOS Tahoe 26.7.1. macOS Monterey
-  (12.6.1) now boots and runs properly with the latest Reims-Graphics.
+- Both GPU stacks have been confirmed on macOS Tahoe 26.7.1. And macOS Monterey
+  (12.6.1) now boots and runs almost flawlessly with the latest Reims-Graphics.
 - `AppleMCEReporterDisabler.kext` is never touched **(REQUIRED FOR MacPro6,1/MacPro7,1 & iMacPro1,1 SMBIOS)**.
 
 Eight CPU presets: six covering Intel/AMD x AVX-512 x core-band for RTX hosts,
-plus two no-AVX2 presets (`IvyBridge`) for Intel and AMD hosts where AVX2 is
-absent. Full strings are in `manager/presets.py`.
+plus two no-AVX2 presets (`Spoofed as IvyBridge`) for Intel and AMD hosts where AVX2 is
+absent/unavailable.
 
 ## Baseline firmware SMBIOS
 
@@ -186,41 +183,39 @@ bundled components.
 
 ## Credits
 
-The GPU stacks used by this project are built on the work of
-[steelbrain/reims-vgpu](https://github.com/steelbrain/reims-vgpu) Thanks to his hard work for making macOS VM acceleration possible.
+The GPU stacks & QEMU of Reims-Graphics used by this project are built on the work of
+[steelbrain/reims-vgpu](https://github.com/steelbrain/reims-vgpu) Thanks to his hard work for making macOS VM with GPU acceleration possible.
 
 ## Recent Changes
 
 - **Host RAM spoofing:** detect the first DIMM via WMI (`ram_info.py` +
   `read-ram.ps1`) and inject its manufacturer/serial/part into OpenCore
   `PlatformInfo.CustomMemory`; `-smbios type=17` uses the host clock speed and
-  only adds `memory_type` when that QEMU build accepts it. The guest NIC MAC is
-  derived from the SMBIOS ROM so the two identities agree.
+  only adds `memory_type` when that QEMU build accepts it.
 - **SMBIOS:** `MacPro7,1` is now the only offered model; generated ROM values
   are normalized to valid unicast MACs. The `iMacPro1,1` alternative and its
   Tahoe warning were removed.
-- **CPU presets:** added two no-AVX2 presets for hosts without AVX2 — Intel
-  (`IvyBridge ... +pcid,-arat,check`) and AMD (`IvyBridge ... -arat,-pcid,-invpcid,check`),
-  selected automatically when host detection reports `avx2 = false`. Verified
-  on a Monterey VM with the AMD preset.
-- **Accelerator:** `intercept-msr-gp=on` (an AMD workaround) is now dropped
-  automatically on Intel hosts.
-- **OpenCore alignment:** saved VMs apply the known-good Booter/Kernel quirks
-  and Security settings from reims-ctl, and staged kext bundles always replace
-  stale in-image copies.
-- **Graphics picker:** OpenCanopy + OcBinaryData Resources are installed with
-  the GoldenGate variant, a 15-second timeout and a custom background.
+- **Fix macOS Tahoe Apple ID Login:** Resolved Apple ID sign-in issues on macOS Tahoe by marking Ethernet as built-in `(built-in = 01, en0)`,
+  `binding the generated SMBIOS MAC address` to the VirtIO Ethernet adapter,
+  and adding `kern.hv_vmm_present = 0` so macOS detects the VM as non-VM. Thanks to https://github.com/Los33c
+- **CPU presets:** added two no-AVX2 presets for hosts without AVX2 --- Intel
+  (`IvyBridge ... +pcid,-arat,check`) or AMD (`IvyBridge ... -arat,-pcid,-invpcid,check`),
+  selected automatically when host detection reports `avx2 = false`. Verified Booted
+  on macOS Monterey VM with the AMD preset.
+- **Non-AVX2 CPU Support (Up To macOS Monterey):** Added Intel and AMD non-AVX2 CPU presets to support booting macOS
+  `up to macOS Monterey` on older host processors `(Intel Sandy Bridge or AMD FX minimum)`.
+- **OpenCore GUI Picker Added:** Initializing OpenCanopy + OcBinaryData Resources with
+  the GoldenGate variant, a 15-second boot timeout is set and a custom background <img width="1740" height="1005" alt="image" src="https://github.com/user-attachments/assets/3864c308-acad-4515-8770-6d4af3e6c88e" />
 - **FAT safety:** `fatsync` now follows cluster chains for directory writes and
   directory slot offsets, so fragmented large files (config.plist, Resources)
   read and delete correctly.
-- **Boot chime removed:** no `AudioDxe.efi`, no HDA device in the launcher, and
+- **Failed Attempt of Adding Boot Chime:** no `AudioDxe.efi`, no HDA device in the launcher, and
   no firmware audio settings in the OpenCore images.
 - **Launcher:** per-profile specs (root-port properties, audio topology, xHCI
-  ports) keep Reims and Apple-GFX argv correct; rebuilt PyInstaller exe with
+  ports) of Reims and Apple-GFX keep argv correct; rebuilt PyInstaller exe with
   portable paths and the bundled RAM script.
 - **Secondary drive:** added a **Detach** button so a configured qcow2/vhd can
-  be cleared without typing.
-- **Monterey:** confirmed working with the latest Reims-Graphics.
+  be cleared just by clicking a button.
 
 ## Notes
 
