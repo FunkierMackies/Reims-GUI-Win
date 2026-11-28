@@ -1,7 +1,7 @@
 # Reims GUI Manager - Windows
 
 A PySide6 desktop manager for creating, configuring, and launching multiple
-macOS VMs (x86_64 Architecture) on Windows with GPU Acceleration initializing the ported `reims-graphics-pci` / `apple-gfx-pci` GPU
+macOS VMs (x86_64 Architecture) on Windows with GPU Acceleration initializing `reims-graphics-pci` (now it has Native Windows Support, builded from reims-ctl) / the ported `apple-gfx-pci` GPU
 stacks from Linux KVM -> Windows WHPX. 
 It writes per-VM PowerShell launch scripts and maintains a per-VM copy
 of the OpenCore firmware image; it does not rebuild QEMU.
